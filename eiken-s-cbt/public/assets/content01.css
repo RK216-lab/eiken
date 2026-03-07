@@ -1,0 +1,56 @@
+.content01_row{
+	height:						32vh;
+	margin-top:					6vh;
+}
+
+.exam_set_no{
+	float:						left;
+	margin-right:				2.5vh;
+}
+
+.exam_item_q{
+	white-space:pre-wrap;
+	width:						100%;
+	margin-bottom:				2vh;
+}
+
+.pre_2_exam_item_q{
+	white-space:pre-wrap;
+	width:						100%;
+	margin-bottom:				1vh;
+}
+
+.exam_answer_area{
+	margin-bottom:				1vh
+}
+
+.select_btn_area{
+	margin-right:				1.7vh;
+}
+
+.review_area{
+	margin-top:					2vh;
+}
+
+.answer_check_review{
+	margin-right:				0.8vh;
+	transform:					scale(1.3);
+}
+
+.review{
+	font-size:					1.8vh;
+}
+
+button.answer_button {
+	font-size:						2vh;
+	width:							9.5vh;
+	height:							3.5vh;
+	border-radius:					4px;
+/*	background:						-ms-linear-gradient(bottom, #36d, #248 50%, #36d);*/
+	margin-top:						0.5vh;
+	margin-bottom:					0.5vh;
+	border:							solid 1px #808080;
+}
+.answer_button:hover {
+	opacity:						0.7;
+}

@@ -1,0 +1,762 @@
+
+var timer_stop=false;
+
+//sound
+var nowSound="";
+var audio= new Audio();
+var a;
+var sound_volume=0.5;
+
+//説明文中
+var exp_now=false;
+
+//再生Q番号
+var play_q_num=1;
+
+//表示Qナンバー
+var view_q_num=1;
+
+/*----------------------------------------------------------
+    ローディング設定
+----------------------------------------------------------*/
+jQuery.event.add(window,"load",function() {
+
+});
+
+
+/*----------------------------------------------------------
+    初期設定
+----------------------------------------------------------*/
+$(function() {
+  
+  const RATIO_BASE							= 0.75;
+  var height = $(window).height();
+  var width = $(window).width();
+  var ratio = height/width;
+  
+  if(ratio > RATIO_BASE){
+    $("#player").css("height",height+"px");
+    $("#player").css("width",width+"px");
+    scale = RATIO_BASE/ratio;
+  }else{
+    $("#player").css("height",height+"px");
+    height = Math.floor(height*4/3);
+    $("#player").css("width",height+"px");
+  }
+
+  $('#entrance a').click(function (e) {
+    e.preventDefault();
+    FirstSet();
+  });
+
+  /*----------------------------------------------------------
+    初期設定
+  ----------------------------------------------------------*/
+  function FirstSet(){
+    $("#entrance").remove();
+
+    //問題開始
+    //StartQuestion(play_q_num);
+    //StartExplain(1);
+
+    //Q1設定
+    $("#content_area").html("");
+    $("#content_area").append($("#q"+view_q_num));
+    $("#prev").hide();
+    
+    $(".answer_list_td").removeClass("view_question");
+    $(".list_check_review").removeClass("view_question");
+    $(".answer_button_list_td").removeClass("view_question");
+    $(".q_list"+view_q_num+" .answer_list_td").addClass("view_question");
+    $(".q_list"+view_q_num+" .list_check_review").addClass("view_question");
+    $(".q_list"+view_q_num+" .answer_button_list_td").addClass("view_question");
+
+    //タイマー開始
+    var min=80;
+    var sec=0;
+    var view_min=( '00' + min ).slice( -2 );
+    var view_sec=( '00' + sec ).slice( -2 );
+    $("#remaining_time").text(view_min+":"+view_sec);
+    var timer1 = setInterval(function(){
+      if (min=="") min=0;
+      min=parseInt(min);
+      if (sec=="") sec=0;
+      sec=parseInt(sec);
+
+      if(!timer_stop){
+        tmWrite(min*60+sec-1);
+      }
+     // console.log(sec)
+    }, 1000);
+    //残り時間を書き出す関数
+    function tmWrite(int){
+      int=parseInt(int);
+      if (int<=0){
+        reSet();
+        // alert("時間です！");
+        $("#dialog_writing_end").hide();
+        $("#modalWindow").show();
+        //timer_stop=true;
+      }else{
+        //残り分数はintを60で割って切り捨てる
+        min=Math.floor(int/60);
+        //残り秒数はintを60で割った余り
+        sec=int % 60;
+        var view_min=( '00' + min ).slice( -2 );
+        var view_sec=( '00' + sec ).slice( -2 );
+        $("#remaining_time").text(view_min+":"+view_sec);
+      }
+    }
+    //フォームを初期状態に戻す（リセット）関数
+    function reSet(){
+      clearInterval(timer1);
+    }
+
+
+  }
+
+  
+  /*----------------------------------------------------------
+    問題切り替え　ダイレクト
+  ----------------------------------------------------------*/
+  function Q_changeDirect(next_q,now_num){
+    console.log("問題切り替え next_q:"+next_q+" now_num:"+now_num);
+    //ポップアップを閉じる
+    $("#dialog_writing").dialog("close");
+    if ($("#dialog_" + now_num).css("display") == 'block') {
+      // 表示されている場合の処理
+		  $("#dialog_" + now_num).dialog("close");
+    }
+
+    //前後のボタン
+    if(next_q==1){
+      $("#prev").hide();
+      $("#next").show();
+      $("#last").hide();
+    }else if(next_q==23){
+      $("#next").hide();
+      $("#prev").show();
+      $("#last").show();
+    }else{
+      $("#prev").show();
+      $("#next").show();
+      $("#last").hide();
+    }
+    $("#screen_lock").show();
+    
+    //canvasコピー
+    $("#canvas_list").append($(".canvas_base"));
+    if(next_q>=13&&next_q<=14){
+      $("#q"+next_q+" #canvas_base").append($("#canvas_base01"));
+    }
+    // if(next_q>=15&&next_q<=21){
+    //   $("#q"+next_q+" #canvas_base").append($("#canvas_base02"))
+    // }
+    if(next_q>=15&&next_q<=17){
+      $("#q"+next_q+" #canvas_base").append($("#canvas_base03"))
+    }
+    if(next_q>=18&&next_q<=21){
+      $("#q"+next_q+" #canvas_base").append($("#canvas_base04"))
+    }
+
+
+
+    if(next_q>now_num){
+      //次の問題入れ込み
+      
+      $('.wr_contents_area').stop().animate({
+        top:-$(".wr_contents_area").height()
+        },{duration:600,easing:'easeInOutQuad',
+        complete:function(){
+          $("#screen_lock").hide();
+
+          //一覧に戻す
+          $("#ans_list").append($("#q"+now_num));
+          $("#content_area").append($("#q"+next_q));
+          view_q_num=next_q;
+          //次
+          $('.wr_contents_area').css("top",$(".wr_contents_area").height()).stop().animate({
+            top:0
+            },{duration:600,easing:'easeInOutQuad',
+            complete:function(){
+              
+              //canvasサイズ調整
+              resize____Canvas($("#q"+view_q_num));
+              
+
+              //リストの再生表示設定
+              $(".answer_list_td").removeClass("view_question");
+              $(".list_check_review").removeClass("view_question");
+              $(".answer_button_list_td").removeClass("view_question");
+              $(".q_list"+view_q_num+" .answer_list_td").addClass("view_question");
+              $(".q_list"+view_q_num+" .list_check_review").addClass("view_question");
+              $(".q_list"+view_q_num+" .answer_button_list_td").addClass("view_question");
+              
+
+              //問題変更
+              if(view_q_num>=1&&view_q_num<9){
+                $("#question_number_image").attr("src","./assets/img/010_1.png");
+                $("#question_explanation span").text("次の(1)から(15)までの(   )に入れるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=9&&view_q_num<13){
+                $("#question_number_image").attr("src","./assets/img/020_1.png");
+                $("#question_explanation span").text("次の四つの会話文を完成させるために, (16)から(20)に入るものとして最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=13&&view_q_num<15){
+                $("#question_number_image").attr("src","./assets/img/030_1.png");
+                $("#question_explanation span").text("次の英文を読み, その文意にそって(21)から(22)までの(   )に入れるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              // }else if(view_q_num>=14&&view_q_num<21){
+              //   $("#question_number_image").attr("src","./assets/img/032_1.png");
+              //   $("#question_explanation span").text("次の英文を読み, その文意にそって(28)から(30)までの(   )に入れるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=15&&view_q_num<18){
+                $("#question_number_image").attr("src","./assets/img/041_1.png");
+                $("#question_explanation span").text("次の英文の内容に関して, (23)から(25)までの質問に対して最も適切なもの, または文を完成させるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=18&&view_q_num<22){
+                $("#question_number_image").attr("src","./assets/img/042_1.png");
+                $("#question_explanation span").text("次の英文の内容に関して, (26)から(29)までの質問に対して最も適切なもの, または文を完成させるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=22){
+              }
+              if(view_q_num>=22){
+                $("#question_area").hide();
+              }else{
+                $("#question_area").show();
+              }
+            }
+          });
+        }
+      });
+    }else{
+      //次の問題入れ込み
+      $('.wr_contents_area').stop().animate({
+        top:$(".wr_contents_area").height()
+        },{duration:800,easing:'easeInOutQuad',
+        complete:function(){
+          $("#screen_lock").hide();
+          
+          //一覧に戻す
+          $("#ans_list").append($("#q"+now_num));
+          $("#content_area").prepend($("#q"+next_q));
+          view_q_num=next_q;
+          $('.wr_contents_area').css("top",-$(".wr_contents_area").height()).stop().animate({
+            top:0
+            },{duration:600,easing:'easeInOutQuad',
+            complete:function(){
+
+              //canvasサイズ調整
+              resize____Canvas($("#q"+view_q_num));
+
+
+              //リストの再生表示設定
+              $(".answer_list_td").removeClass("view_question");
+              $(".list_check_review").removeClass("view_question");
+              $(".answer_button_list_td").removeClass("view_question");
+              $(".q_list"+view_q_num+" .answer_list_td").addClass("view_question");
+              $(".q_list"+view_q_num+" .list_check_review").addClass("view_question");
+              $(".q_list"+view_q_num+" .answer_button_list_td").addClass("view_question");
+              
+              //問題変更
+              if(view_q_num>=1&&view_q_num<9){
+                $("#question_number_image").attr("src","./assets/img/010_1.png");
+                $("#question_explanation span").text("次の(1)から(15)までの(   )に入れるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=9&&view_q_num<13){
+                $("#question_number_image").attr("src","./assets/img/020_1.png");
+                $("#question_explanation span").text("次の四つの会話文を完成させるために, (16)から(20)に入るものとして最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=13&&view_q_num<15){
+                $("#question_number_image").attr("src","./assets/img/030_1.png");
+                $("#question_explanation span").text("次の英文を読み, その文意にそって(21)から(22)までの(   )に入れるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              // }else if(view_q_num>=17&&view_q_num<20){
+              //   $("#question_number_image").attr("src","./assets/img/032_1.png");
+              //   $("#question_explanation span").text("次の英文を読み, その文意にそって(28)から(30)までの(   )に入れるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=15&&view_q_num<18){
+                $("#question_number_image").attr("src","./assets/img/041_1.png");
+                $("#question_explanation span").text("次の英文の内容に関して, (23)から(25)までの質問に対して最も適切なもの, または文を完成させるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=18&&view_q_num<22){
+                $("#question_number_image").attr("src","./assets/img/042_1.png");
+                $("#question_explanation span").text("次の英文の内容に関して, (26)から(29)までの質問に対して最も適切なもの, または文を完成させるのに最も適切なものを 1, 2, 3, 4 の中から一つ選びなさい。");
+              }else if(view_q_num>=22){
+              }
+              if(view_q_num>=22){
+                $("#question_area").hide();
+              }else{
+                $("#question_area").show();
+              }
+            }
+          });
+        }
+      });
+      
+    }
+  }
+
+  function resize____Canvas(target){
+
+    
+                // 赤ペンボタンのボーダー色・背景を変更
+                $("#pen").css({"border-color":"#E0C88F","background-color":"#E5E5E5"});
+                $("#marker").css({"border-color":"#B3B3B3","background-color":"#F3F3F3"});
+                $("#eraser").css({"border-color":"#B3B3B3","background-color":"#F3F3F3"});
+                // キャンバスの描画状態設定
+                drawType = CRAW_TYPE_SOURCE_OVER;
+                drawColor = DRAW_COLOR_RED;
+                drawSize = DRAW_SIZE_SMALL;
+                // キャンバス上のマウスカーソルを「ペン」に設定
+                $("#canvas").addClass("pen");
+                $("#canvas").removeClass("marker");
+                $("#canvas").removeClass("eraser");
+
+
+    if(!target.find("canvas").hasClass("set_canvas_size")){
+      target.find("canvas").addClass("set_canvas_size")
+      var now_height=target.find("#canvas_background").height();
+      // console.log(now_height);
+      target.find("canvas").height(target.find("#canvas_background").height());
+      target.find("canvas").attr("height",target.find("#canvas_background").height());
+
+
+      setTimeout(function(){
+        target.find("canvas").height(target.find("#canvas_background").height());
+        target.find("canvas").attr("height",target.find("#canvas_background").height());
+
+        target.find("#canvas_background").height(target.find("canvas").height());
+        target.find("#canvas_base01 #canvas_background").height(target.find("canvas").height()-30);//背景画像なぜか縮小させる
+        target.find("#canvas_base02 #canvas_background").height(target.find("canvas").height()-30);//背景画像なぜか縮小させる
+        target.find("#canvas_base03 #canvas_background").height(target.find("canvas").height()-30);//背景画像なぜか縮小させる
+        target.find("#canvas_base04 #canvas_background").height(target.find("canvas").height()-30);//背景画像なぜか縮小させる
+      },0);
+      
+      var now_width=target.find("canvas").width();
+      target.find("canvas").width(target.find("#canvas_background").width());
+      target.find("canvas").attr("width",target.find("#canvas_background").width());
+
+      
+      //2024追加
+      // alert($("#q22 #canvas").height()+"|"+$(".canvas_base_q22").height())
+      $(".canvas_base_q22").height($("#q22 #canvas").height());
+      // let maxBaseHeight = (window.innerHeight - document.getElementById("canvas_base").offsetTop) * 0.8;
+      // $("#canvas_base").height(maxBaseHeight < ($("#canvas").height()) ? maxBaseHeight : ($("#canvas").height()));
+
+      // alert($("#q14 #canvas").height())
+      // $("#q14 #canvas_background").height($("#q14 canvas").height()-30);
+
+    }
+  }
+
+  /*----------------------------------------------------------
+    前・次の問題へ
+  ----------------------------------------------------------*/
+  $('#next').click(function (e) {
+    e.preventDefault();
+    var next_q=view_q_num+1;
+    Q_changeDirect(next_q,view_q_num);
+  });
+  $('#prev').click(function (e) {
+    e.preventDefault();
+    var next_q=view_q_num-1;
+    Q_changeDirect(next_q,view_q_num);
+  });
+
+  /*----------------------------------------------------------
+    リストから問題へ
+  ----------------------------------------------------------*/
+  $('.direct_item').click(function (e) {
+    e.preventDefault();
+    var next_q=parseInt($(this).attr("set_q"));
+    Q_changeDirect(next_q,view_q_num);
+  });
+  
+  /*----------------------------------------------------------
+    解答クリック
+  ----------------------------------------------------------*/
+  $('.answer_button').click(function (e) {
+    e.preventDefault();
+    var target=$(this).attr("qno");
+    var ans=$(this).attr("ano");
+
+    if($(this).hasClass("button_click")){
+      $(this).removeClass("button_click");
+      $(".answer_button_list_td[qno='"+target+"']").find(".answer_button_list").removeClass("button_click");
+    }else{
+      $(this).parent().parent().parent().find(".answer_button").removeClass("button_click");
+      $(this).addClass("button_click");
+      $(".answer_button_list_td[qno='"+target+"']").find(".answer_button_list").removeClass("button_click");
+      $(".answer_button_list_td[qno='"+target+"']").find(".answer_button_list[ano='"+ans+"']").addClass("button_click");
+    }
+  });
+  $('.answer_button_list').click(function (e) {
+    e.preventDefault();
+    var target=$(this).parent().attr("qno");
+    var ans=$(this).attr("ano");
+
+    if($(this).hasClass("button_click")){
+      $(this).removeClass("button_click");
+      $(".answer_button[qno='"+target+"']").removeClass("button_click");
+    }else{
+      $(this).parent().find(".answer_button_list").removeClass("button_click");
+      $(this).addClass("button_click");
+      $(".answer_button[qno='"+target+"']").removeClass("button_click");
+      $(".answer_button[qno='"+target+"'][ano='"+ans+"']").addClass("button_click");
+    }
+  });
+
+  
+  /*----------------------------------------------------------
+    目印クリック
+  ----------------------------------------------------------*/
+  $('.answer_check_review').click(function (e) {
+    var target=$(this).attr("sno");
+    if($(this).prop("checked") == true){
+      $(".check_review[sno='"+target+"']").prop("checked",true);
+    }else{
+      $(".check_review[sno='"+target+"']").prop("checked",false);
+    }
+  });
+  $('.check_review').click(function (e) {
+    var target=parseInt($(this).attr("sno"));
+    if($(this).prop("checked") == true){
+      $("#check_"+target).prop("checked",true);
+    }else{
+      $("#check_"+target).prop("checked",false);
+    }
+  });
+  
+  /*----------------------------------------------------------
+    終了
+  ----------------------------------------------------------*/
+
+  $('#reding_writing_end, #last').click(function (e) {
+    // $("#container").hide();
+    $("#dialog_writing_end").show();
+    //timer_stop=true;
+  });
+  $('#dialog_writing_end_cancel').click(function (e) {
+    // $("#container").hide();
+    $("#dialog_writing_end").hide();
+    //timer_stop=false;
+  });
+
+  $('#dialog_writing_end_ok').click(function (e) {
+    // $("#container").hide();
+    $("#dialog_writing_end2").show();
+    $("#dialog_writing_end").hide();
+    //timer_stop=true;
+  });
+  $('#dialog_writing_end_cancel2').click(function (e) {
+    // $("#container").hide();
+    $("#dialog_writing_end2").hide();
+    //timer_stop=false;
+  });
+  $('#dialog_writing_end_ok2').click(function (e) {
+    // $("#container").hide();
+    $("#dialog_writing_end2").hide();
+    $("#modalWindow").show();
+    timer_stop=true;
+  });
+  $('#all_end').click(function (e) {
+    // $("#container").hide();
+    // location.href="./"
+    window.close();
+  });
+
+(function() {
+  scroll_resize();
+  function scroll_resize(){
+    var WinW = $(window).width();
+    var WinH = window.innerHeight ? window.innerHeight : $(window).height();
+
+    $("#dialog_writing_end.ui-dialog,#dialog_writing_end2.ui-dialog").css({"width":WinH*0.9,"margin-left":(WinH*0.9)*-0.5});
+  }
+  $(window).on('orientationchange load scroll resize', scroll_resize);
+})();
+  
+
+  /*----------------------------------------------------------
+    ライティング解答領域・入力
+  ----------------------------------------------------------*/
+	$(document).on("input","#writing",function(){
+		let str = $(this).val();    
+	    if (str.length > 3000) {
+   			str = str.slice(0, 3000);
+ 		}
+	  str=str.replace(/[^a-zA-Z0-9 \!\-\r\n\^\\\.,;:_~()'"@<>?{}\[\]=]/g,"");
+		$("#writing").val(str);
+		// 単語数算出
+		//let count = countWords($(this).val());
+		let count = countWords(str);
+		if(str.trim() == ""){
+			count = 0;
+		}
+		// 単語数表示
+		$("#word_count").html(count);
+		// 単語数が０より大きいとき
+		if(count > 0){
+			$(".answer_writing").html("解答あり");
+		}else{
+			$(".answer_writing").html("未解答");
+		}
+  });
+  
+  /*----------------------------------------------------------
+    ライティング解答領域・入力 2
+  ----------------------------------------------------------*/
+	$(document).on("input","#writing2",function(){
+		let str = $(this).val();    
+	    if (str.length > 3000) {
+   			str = str.slice(0, 3000);
+ 		}
+	  str=str.replace(/[^a-zA-Z0-9 \!\-\r\n\^\\\.,;:_~()'"@<>?{}\[\]=]/g,"");
+		$("#writing2").val(str);
+		// 単語数算出
+		//let count = countWords($(this).val());
+		let count = countWords(str);
+		if(str.trim() == ""){
+			count = 0;
+		}
+		// 単語数表示
+		$("#word_count2").html(count);
+		// 単語数が０より大きいとき
+		if(count > 0){
+			$(".answer_writing2").html("解答あり");
+		}else{
+			$(".answer_writing2").html("未解答");
+		}
+  });
+
+
+  // 単語数検索
+  function countWords(text) {
+        return (text+=".").trim().replace(/(\,|\.|:|;|\!|\?|\s)+/g, " ").split(" ").length - 1;
+  }
+  
+  /*----------------------------------------------------------
+    コピー
+  ----------------------------------------------------------*/
+
+  $('#w_copy').click(function (e) {
+		$("#clip").val($("#writing").selection());
+  });
+  $('#w_copy_1').click(function (e) {
+		$("#clip2").val($("#writing2").selection());
+  });
+
+  $(document).on("click","#w_paste",function(){
+    if($("#clip").val() != ""){
+        if($("#writing").selection() != ""){	
+          $("#paste_dialog").show();
+        }else{
+          if($("#clip").val().length + $("#writing").val().length < 3000){
+            $("#writing").selection("replace", {text: $("#clip").val(),caret: 'end'});
+            let count = countWords($("#writing").val());
+            if($("#writing").val().trim() == ""){
+              count = 0;
+            }
+            $("#word_count").html(count);		
+                
+          }else{
+            $("#dialog_writing_paste").html("文字数が3000文字を超えています。<br> コピーする文字列を調整してください。");
+            $("#dialog_writing_paste" ).dialog("open");
+            $(".ui-dialog .ui-dialog-content").css({"padding":"3vh 2.5vh","text-align":"center"});
+          }
+        }
+    }
+});
+$(document).on("click","#w_paste_1",function(){
+    if($("#clip2").val() != ""){
+        if($("#writing2").selection() != ""){	
+          $("#paste_dialog2").show();
+        }else{
+          if($("#clip2").val().length + $("#writing2").val().length < 3000){
+            $("#writing2").selection("replace", {text: $("#clip2").val(),caret: 'end'});
+            let count = countWords($("#writing2").val());
+            if($("#writing2").val().trim() == ""){
+              count = 0;
+            }
+            $("#word_count2").html(count);		
+                
+          }else{
+            $("#dialog_writing_paste2").html("文字数が3000文字を超えています。<br> コピーする文字列を調整してください。");
+            $("#dialog_writing_paste2" ).dialog("open");
+            $(".ui-dialog .ui-dialog-content").css({"padding":"3vh 2.5vh","text-align":"center"});
+          }
+        }
+    }
+});
+
+$("#dialog_writing_alert_ok").click(function (e) {
+  $("#paste_dialog").hide();
+  $("#writing").selection("replace", {text: $("#clip").val(),caret: 'end'});
+  let count = countWords($("#writing").val());
+  if($("#writing").val().trim() == ""){
+    count = 0;
+  }
+  $("#word_count").html(count);	
+});
+$("#dialog_writing_alert_ok2").click(function (e) {
+   $("#paste_dialog2").hide();
+   $("#writing2").selection("replace", {text: $("#clip").val(),caret: 'end'});
+   let count = countWords($("#writing2").val());
+   if($("#writing2").val().trim() == ""){
+     count = 0;
+   }
+   $("#word_count2").html(count);	
+});
+
+var write_paste=false;
+$("#dialog_writing_alert_cancel").click(function (e) {
+  write_paste=false;
+  $("#paste_dialog").hide();
+});
+var write_paste2=false;
+$("#dialog_writing_alert_cancel2").click(function (e) {
+  write_paste2=false;
+  $("#paste_dialog2").hide();
+});
+
+
+$("#dialog-link_writing").click(function (e) {
+  $("#dialog_writing").html(escapeHTML($("#writing").val()).replace(/\r?\n/g, '<br />'));
+  $("#dialog_writing" ).dialog("open");
+  $(".ui-dialog-titlebar-close").css("display","block");
+  $(".ui-dialog .ui-dialog-content").css({"padding":"0","text-align":"left"});
+});
+$("#dialog-link_writing_1").click(function (e) {
+  $("#dialog_writing2").html(escapeHTML($("#writing2").val()).replace(/\r?\n/g, '<br />'));
+  $("#dialog_writing2" ).dialog("open");
+  $(".ui-dialog-titlebar-close").css("display","block");
+  $(".ui-dialog .ui-dialog-content").css({"padding":"0","text-align":"left"});
+});
+
+  //ダイアログ生成
+	$("#dialog_writing").dialog({
+		autoOpen: false,
+		width: $("#content_area").width()*0.9,
+		height: $("#content_area").height()*0.9,
+		resizable: true,
+		close: function() {
+			$(".ui-dialog-titlebar-close").css("display","none");
+		}
+  });
+	$("#dialog_writing2").dialog({
+		autoOpen: false,
+		width: $("#content_area").width()*0.9,
+		height: $("#content_area").height()*0.9,
+		resizable: true,
+		close: function() {
+			$(".ui-dialog-titlebar-close").css("display","none");
+		}
+  });
+
+	$('#dialog_writing_paste').dialog({
+		dialogClass:'titleClass',
+		autoOpen: false,
+		width: $("#content_area").width()*0.4,
+		height: $("#content_area").height()*0.3,
+		modal: true, 
+		draggable: false,
+		title: "ライティング",
+		resizable: false,
+		buttons: {
+			"OK": function () {
+				$(this).dialog("close");
+			}
+		},
+	});
+	$('#dialog_writing_paste2').dialog({
+		dialogClass:'titleClass',
+		autoOpen: false,
+		width: $("#content_area").width()*0.4,
+		height: $("#content_area").height()*0.3,
+		modal: true, 
+		draggable: false,
+		title: "ライティング",
+		resizable: false,
+		buttons: {
+			"OK": function () {
+				$(this).dialog("close");
+			}
+		},
+	});
+
+
+  function escapeHTML(str){
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+  
+
+  /*----------------------------------------------------------
+    問題開閉
+  ----------------------------------------------------------*/
+  $('#arrow_img_area').click(function (e) {
+    e.preventDefault();
+    if($(this).hasClass("view")){
+      $(this).removeClass("view");
+      $(this).find(".icon-down").show();
+      $(this).find(".icon-up").hide();
+      $("#question_number_image_area").hide();
+      $('.question_slide').stop().animate({
+        height:"3.5vh"
+        },{duration:300,easing:'easeInOutQuad',
+        complete:function(){
+        }
+      });
+    }else{
+      $(this).addClass("view");
+      $(this).find(".icon-down").hide();
+      $(this).find(".icon-up").show();
+      $('.question_slide').stop().animate({
+        height:"10vh"
+        },{duration:300,easing:'easeInOutQuad',
+        complete:function(){
+          $("#question_number_image_area").show();
+        }
+      });
+    }
+  });
+  $('#answer_arrow_img_area').click(function (e) {
+    e.preventDefault();
+    if($(this).hasClass("view")){
+      $(this).removeClass("view");
+      $(this).find(".icon-left").show();
+      $(this).find(".icon-right").hide();
+      $("#answer_panle").hide();
+      $(".answer_area_title").hide();
+      
+      $('#answer_area').stop().animate({
+        width:"3vh"
+        },{duration:300,easing:'easeInOutQuad',
+        complete:function(){
+        }
+      });
+    }else{
+      $(this).addClass("view");
+      $(this).find(".icon-left").hide();
+      $(this).find(".icon-right").show();
+      $('#answer_area').stop().animate({
+        width:"41.5vh"
+        },{duration:300,easing:'easeInOutQuad',
+        complete:function(){
+          $("#answer_panle").show();
+          $(".answer_area_title").show();
+        }
+      });
+    }
+  });
+});
+
+
+(function() {
+  /*----------------------------------------------------------
+    scroll
+  ----------------------------------------------------------*/
+  function scroll_resize(){
+    WinScroll = $(window).scrollTop();
+    WinW = $(window).width();
+    WinH = window.innerHeight ? window.innerHeight : $(window).height();
+
+  }
+
+  $(window).on('load', scroll_resize);
+  $(window).on('orientationchange load scroll resize', scroll_resize);
+})();

@@ -1,0 +1,43 @@
+.listening_image{
+	border:						2px solid gray;
+	width:						110%
+}
+
+.l_contents_area{
+	height:						74vh;
+}
+
+.listening_ans_area{
+	margin-top:					2vh;
+	padding-left:				3vh;
+}
+
+.listening_answer_btn_area{
+	margin-right:				3vh;
+}
+
+.l_exam_set_no{
+	width:						4vh;
+}
+
+.third_l_exam_set_no{
+	width:						4vh;
+	float:						none;
+}
+
+.listening_answer{
+	margin-top:					0.8vh;
+}
+
+.pre2_btn{
+	width:						100% !important;
+}
+
+.third_btn_area{
+	margin-left:				3vh;
+	margin-top:					1vh;
+}
+
+.third_review_area{
+	margin-left:				4.9vh;
+}

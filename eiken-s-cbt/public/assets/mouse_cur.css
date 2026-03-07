@@ -1,0 +1,10 @@
+.pen{
+	cursor:						url("../img/pen_cursor.cur"), auto;
+}
+.marker{
+	cursor:						url("../img/marker_cursor.cur"), auto;
+}
+.eraser{
+	cursor:						url("../img/eraser_cursor.cur"), auto;
+}
+

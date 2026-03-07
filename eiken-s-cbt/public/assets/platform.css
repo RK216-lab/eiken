@@ -1,0 +1,166 @@
+:root{
+	--scale: 1;
+	--scale: 0.9568;
+}
+
+body{
+	font-family:						'Arial','ＭＳ Ｐゴシック';
+	-ms-user-select:					none;
+	-webkit-user-select:				none;
+	user-select:						none;
+}
+
+/* プレイヤ－の設定*/
+#player{
+	margin:						0 auto;
+	background:					#eeeeee;
+}
+
+/* ダイアログ表示用*/
+.ui-dialog-titlebar-close{
+	display:					none;
+}
+
+
+.ui-dialog .ui-dialog-title{
+	font-size:					3vh;
+	text-align:					center;
+	width:						100%;
+}
+
+.ui-dialog .ui-dialog-titlebar{
+	padding:					0;
+}
+
+.ui-widget-header{
+	background:					#bab6ae;
+	color:						#ffffff;
+}
+
+.ui-widget-overlay{
+	opacity:					0.3;
+}
+
+ .ui-button:active{
+	background:					#EDEDED !important;
+	color:						#2B2B2B !important;
+	border:						none;
+}
+
+.ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset{
+	float:						none;
+	text-align:					center;
+}
+
+.ui-widget-content{
+	border:						none;
+}
+
+.ui-dialog .ui-dialog-content{
+	font-size:					calc(2vh * var(--scale, 1));
+}
+/*
+.ui-dialog .ui-dialog-content{
+	font-size:					2vh;
+}
+*/
+
+
+.ui-dialog .ui-dialog-buttonpane button{
+	width:						10vh;
+	height:						3.9vh;
+	font-size:					2.2vh;
+	font-weight:				bold;
+}
+
+.ui-dialog{
+	padding:					0vh;
+}
+
+/*
+.ui-dialog .ui-dialog-buttonpane button:active{
+	background-color:			transparent;
+}
+*/
+
+/* gridのgutter調整 */
+.row-0{
+	margin-left:				0px;
+	margin-right:				0px;
+}
+.row-0 > div{
+	padding-right:				0px;
+	padding-left:				0px;
+}
+.row-10{
+	margin-left:				-5px;
+	margin-right:				-5px;
+}
+.row-10 > div{
+	padding-right:				5px;
+	padding-left:				5px;
+}
+.row-20{
+	margin-left:				-10px;
+	margin-right:				-10px;
+}
+.row-20 > div{
+	padding-right:				10px;
+	padding-left:				10px;
+}
+.row-30{
+	margin-left:				-15px;
+	margin-right:				-15px;
+}
+.row-30 > div{
+	padding-right:				15px;
+	padding-left:				15px;
+}
+.row-40{
+	margin-left:				-20px;
+	margin-right:				-20px;
+}
+.row-40 > div{
+	padding-right:				20px;
+	padding-left:				20px;
+}
+
+/* デザイン */
+.b{
+	border:						1px solid black;
+}
+.bt{
+	border-top:					1px solid black;
+}
+.bb{
+	border-bottom:				1px solid black;
+}
+.bl{
+	border-left:				1px solid black;
+}
+.br{
+	border-right:				1px solid black;
+}
+
+
+/* 画面ロック*/
+	#loading{
+	display:					table;
+	width:						100%;
+	height:						100%;
+	position:					fixed;
+	top:						0;
+	left:						0;
+	z-index:					900;
+	background-color:			#fff;
+	opacity:					0.8;
+}
+
+#loading .loadingMsg {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  padding-top: 140px;
+  z-index:					990;
+  background: url("../img/wait.gif") center center no-repeat;
+}
