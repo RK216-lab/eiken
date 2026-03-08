@@ -1,0 +1,104 @@
+.long_sentence{
+/*		width:						32vw;*/
+	padding-right:				0;
+	padding-left:				3vh;
+
+}
+.long_sentence_button_area{
+	margin-top:					2.3vh;
+	width:						98%;
+	font-size:					0;
+}
+
+
+.long_sentence_btn_select{
+	background-color:			#F3F3F3;
+	border:						2px solid #B3B3B3;
+	font-size:					1.4vh;
+	width:						13.5vh;
+	height:						3vh;
+	font-weight:				bold;
+}
+
+.long_sentence_btn_select:hover{
+	border-color:				#E0C88F;
+	opacity:						0.7;
+}
+
+#pen{
+	border-radius:				3px 0px 0px 3px;
+	border-color:				#E0C88F;
+	background-color:			#E5E5E5;
+}
+
+#eraser{
+	border-radius:				0px 3px 3px 0px;
+}
+
+#view_sentence{
+	float:						right;
+	border:						1px solid red;
+	border-radius:				3px;
+}
+
+.dialog_sentence{
+	text-align:center;
+}
+
+#canvas_base{
+	position:					relative;
+	width:						98%;
+	height:						78.3vh;
+	margin-top:					2.5vh;
+	border:						1.5px solid #dddddd;
+	overflow-y:					auto;
+	-ms-overflow-style:			scrollbar;
+}
+#canvas{
+	width:						100%;
+	height:						auto;
+	background:					transparent;
+	z-index:					10;
+	position:					absolute;
+}
+#canvas_background{
+	width:						100%;
+/*	height:						50vh;*/
+/*	height:						auto;*/
+/*	max-height:					75vh;*/
+	display:					block;
+	margin-left:				auto;
+	margin-right:				auto;
+	z-index:					1;
+	position:					absolute;
+}
+
+.answer_area{
+	margin-top:					5vh;
+	padding-left:				0;
+}
+
+.long_sentence_exam_no{
+	float:						left;
+	margin-right:				1vh;
+}
+
+.answer_butter_area .answer_button{
+	width:						8vh;
+	height:						3.8vh;
+	float:						left;
+	margin-right:				1vh;
+}
+
+.long_sentence_answer{
+	margin-top:					1.81vh;
+}
+
+.item_q_area{
+	margin-bottom:				2vh;
+}
+
+.other_dialog{
+	max-height:						100%;
+	max-width:						100%;
+}

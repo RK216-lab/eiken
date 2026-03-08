@@ -1,0 +1,613 @@
+/* その他共通 */
+#other_title{
+	font-size:				4.9vh;
+	margin-bottom:			1.6vh;
+}
+#other_logo{
+/*	width:					7%; */
+
+	height:					9vh;
+
+}
+#other_cnt{
+	background:				white;
+	padding:				12vh;
+	border:					solid 1px gainsboro;
+	border-radius:			6px;
+	height:					80%;
+}
+.other_attention{
+	color:					#1E50A2;
+}
+.other_text{
+	font-size:				3vh;
+}
+#other_btn_f{
+	margin-top:				1.1vh;
+}
+#other_btn_f button{
+	width:					22vh;
+	height:					6.2vh;
+	font-size:				2vh;
+	border-radius:			7px;
+}
+#other_btn_f button:hover{
+	border:					solid 1px deepskyblue;
+}
+.other_document_hide{
+	display:				none;
+}
+.other_document_show{
+	display:				block;
+	width:					100%;
+}
+#dialog_button{
+	margin-top:				1.1vh;
+}
+#dialog_button button{
+	width:					10vh;
+	height:					4vh;
+	font-size:				2vh;
+	border-radius:			7px;
+}
+#dialog_button button:hover{
+	border:					solid 1px deepskyblue;
+}
+
+#other_dialog_prev{
+	visibility:				hidden;
+}
+
+/* 受験者情報確認 */
+.examinee_attention{
+	font-size:				3vh;
+}
+
+.examinee_table{
+	text-align:				left;
+	margin:					2vh 0 !important;
+	border-collapse:		separate;
+}
+.examinee_row{
+	height:					7vh;
+}
+.examinee_table td{
+	vertical-align:			middle;
+	text-align:				left;
+	font-size:				3vh !important;
+}
+.examinee_head{
+	width:					25vw;
+}
+.examinee_head_item{
+	display:				table-cell;
+	height:					5vh;
+	width:					25vw;
+	vertical-align:			middle;
+	border-radius:			10px;
+	border:					solid 1px gainsboro;
+	background-color:		#E6E6E6;
+	color:					#666666;
+	font-weight:			bold;
+	padding-left:			1em;
+}
+.examinee_label{
+	color:					#1E50A2 !important;
+	padding:				2vw;
+}
+.examinee_name{
+	width:					15vw;
+	font-weight:			bold;
+}
+.examinee_prev{
+	margin:					0 !important;
+}
+
+/* 試験再開 */
+.restart_attention{
+	font-size:				4vh;
+}
+.restart_grade{
+	font-size:				5vh;
+	margin-top:				11vh;
+}
+.restart_text{
+	margin-top:				2.5vh;
+}
+
+/* 試験リカバリー */
+.recovery_attention{
+	font-size:				4vh;
+	margin-top:				11vh;
+}
+.recovery_text{
+	margin-top:				11vh;
+}
+
+/* 試験中断 */
+.suspended_attention{
+	font-size:				4vh;
+	margin-top:				11vh;title
+}
+
+.suspended_text{
+	margin-top:				11vh;
+}
+
+/* 画面遷移制御 */
+.wait_status_attention{
+	font-size:				4vh;
+	margin-top:				4vh;
+	margin-bottom:			6vh;
+}
+
+#btn_wait_status_next{
+	width:					40vh;
+	height:					15vh;
+	border-radius:			12px;
+	margin-top:				5vh;
+	background:				linear-gradient(#D7E9F1,#98BAD1);
+}
+#btn_wait_status_next:hover{
+	background:				linear-gradient(#5D8CC1, #31588B);
+}
+
+/* エラー*/
+.error_attention{
+	color:					#B7282E !important;
+	font-size:				4vh;
+}
+
+.error_text{
+	margin-top:				5vh;
+}
+
+#exam_error_msg{
+	margin-top:				4vh;
+}
+
+/* 試験開始 */
+
+.examstart_attention{
+	font-size:				calc(4vh * var(--scale, 1));
+}
+.examstart_text{
+	margin-top:				calc(2.5vh * var(--scale, 1));
+}
+.examstart_button_label{
+	font-size:				calc(4vh * var(--scale, 1));
+}
+
+.examstart_button_attention{
+	font-size:				calc(3vh * var(--scale, 1));	
+}
+
+.examstart_grade{
+	font-size:				calc(5vh * var(--scale, 1));
+	margin-top:				calc(4vh * var(--scale, 1));
+	margin-bottom:			calc(4vh * var(--scale, 1));
+}
+#btn_exam_start{
+	width:					calc(50vh * var(--scale, 1));
+	height:					calc(20vh * var(--scale, 1));
+	border-radius:			12px;
+	background:				linear-gradient(#D7E9F1, #31588B);
+}
+#btn_exam_start:hover{
+	background:				linear-gradient(#5D8CC1, #31588B);
+}
+
+/*
+.examstart_attention{
+	font-size:				4vh;
+}
+.examstart_text{
+	margin-top:				2.5vh;
+}
+.examstart_button_label{
+	font-size:				4vh;
+}
+
+.examstart_button_attention{
+	font-size:				3vh;	
+}
+
+.examstart_grade{
+	font-size:				5vh;
+	margin-top:				4vh;
+	margin-bottom:			4vh;
+}
+#btn_exam_start{
+	width:					50vh;
+	height:					20vh;
+	border-radius:			12px;
+	background:				linear-gradient(#D7E9F1, #31588B);
+}
+#btn_exam_start:hover{
+	background:				linear-gradient(#5D8CC1, #31588B);
+}
+*/
+
+
+#btn_writing_exam_start{
+	width:					calc(50vh * var(--scale, 1));
+	height:					calc(20vh * var(--scale, 1));
+	border-radius:			12px;
+	background:				linear-gradient(#D7E9F1, #31588B);
+}
+/*
+#btn_writing_exam_start{
+	width:					50vh;
+	height:					20vh;
+	border-radius:			12px;
+	background:				linear-gradient(#D7E9F1, #31588B);
+}
+*/
+
+#btn_writing_exam_start:hover{
+	background:				linear-gradient(#5D8CC1, #31588B);
+}
+
+.help_right_margin{
+	margin-right:			22vh;
+}
+
+/* チュートリアル */
+#tutorial_video{
+/*	width:					100%;*/
+	height:					calc(100vh * var(--scale, 1));
+}
+
+#btn_tutorial_exam_start{
+	position:				absolute;
+	z-index:				3;
+	bottom:					2vh;
+	left:					0;
+	border-radius:			6px;
+	height:					5vh;
+	background:				linear-gradient(#BAD8EF, #AEAEFF);
+	
+	/*	opacity:				0.7;*/
+
+	font-weight:			bold;
+}
+
+#dialog_tutorial_btn{
+	position:						absolute;
+	bottom:							1vh;
+	right:							0;
+	left:							0;
+}
+
+#dialog_tutorial_btn button{
+	border-radius:			6px;
+	width:					10vh;
+	font-weight:			bold;
+	border:					solid 1px;
+}
+
+#dialog_tutorial_btn button:focus{
+	border-color:			deepskyblue;
+}
+
+#dialog_tutorial_txt{
+	color:					#E2041B;
+	margin-top:				8vh;
+}
+
+.titleClass .ui-dialog-titlebar{
+	color:					#E2041B;
+}
+
+.writingTitle .ui-dialog-titlebar{
+	color:					#E2041B;
+}
+
+.writingTitle .ui-dialog-title{
+	white-space:			normal;
+}
+
+
+/* 音声チェック */
+.sound_check_cnt{
+	padding:				0 !important;
+}
+
+.sound_check_attention{
+	font-size:				calc(4vh * var(--scale, 1));
+	margin-top:				calc(2vh * var(--scale, 1));
+	margin-bottom:			calc(3vh * var(--scale, 1));
+}
+.sound_check_text{
+	font-size:				calc(3vh * var(--scale, 1));
+	margin-top:				calc(2vh * var(--scale, 1));
+	margin-bottom:			calc(3vh * var(--scale, 1));
+}
+#btn_sound_check{
+	width:					calc(45vh * var(--scale, 1));
+	height:					calc(16vh * var(--scale, 1));
+	border-radius:			12px;
+	background:				linear-gradient(#FFEBD6, #CC6417);
+	font-size:				calc(3vh * var(--scale, 1));
+}
+#btn_sound_check:hover{
+	background:				linear-gradient(#F4B87E, #E28D47);
+}
+#btn_listening_start{
+	width:					calc(45vh * var(--scale, 1));
+	height:					calc(16vh * var(--scale, 1));
+	border-radius:			12px;
+	background:				linear-gradient(#D7E9F1, #31588B);
+	font-size:				calc(3vh * var(--scale, 1));
+}
+#btn_listening_start:hover{
+	background:				linear-gradient(#5D8CC1, #31588B);
+}
+.sound_check_button_label{
+	font-size:				calc(4vh * var(--scale, 1));
+}
+.sound_check_button_text{
+	font-size:				calc(2vh * var(--scale, 1));
+}
+
+/*
+.sound_check_attention{
+	font-size:				4vh;
+	margin-top:				2vh;
+	margin-bottom:			3vh;
+}
+.sound_check_text{
+	font-size:				3vh;
+	margin-top:				2vh;
+	margin-bottom:			3vh;
+}
+#btn_sound_check{
+	width:					45vh;
+	height:					16vh;
+	border-radius:			12px;
+	background:				linear-gradient(#FFEBD6, #CC6417);
+	font-size:				3vh;
+}
+#btn_sound_check:hover{
+	background:				linear-gradient(#F4B87E, #E28D47);
+}
+#btn_listening_start{
+	width:					45vh;
+	height:					16vh;
+	border-radius:			12px;
+	background:				linear-gradient(#D7E9F1, #31588B);
+	font-size:				3vh;
+}
+#btn_listening_start:hover{
+	background:				linear-gradient(#5D8CC1, #31588B);
+}
+.sound_check_button_label{
+	font-size:				4vh;
+}
+.sound_check_button_text{
+	font-size:				2vh;
+}
+*/
+
+/* ボリュームバー */
+#sound_check_volume_text{
+	margin-top:				2vh;
+}
+#sound_check_volume{
+	width:					38%;
+	margin:					auto !important;
+}
+#sound_check_volume .min{
+	width:					8%;
+	vertical-align:			middle;
+}
+#sound_check_volume .bar{
+	width:					80%;
+	vertical-align:			middle;
+}
+#sound_check_volume .max{
+	width:					12%;
+	padding-left:			5%;
+	vertical-align:			middle;
+}
+
+.sound_check_vol_bar_area{
+	padding:				0 1.5vh;
+}
+
+.sound_check_vol_bar_area .ui-slider-handle{
+	width:					5vh !important;
+	height:					5vh !important;
+	background-size:		contain !important;
+	top:					-2.5vh !important;
+}
+#sound_check_min_volume{
+	width:					4vh !important;
+	height:					4vh !important;
+}
+#sound_check_max_volume{
+	width:					6vh !important;
+	height:					6vh !important;
+}
+
+/* 採点 */
+#btn_result{
+	width:					23vh;
+	height:					7vh;
+
+	border-radius:			6px;
+	font-size:				3vh;
+	border:					solid 1px;
+}
+
+.btn_result_area{
+	margin-top:				6vh;
+}
+
+.result_txt{
+	font-size:				4vh;
+}
+
+/* 試験終了 */
+#exam_end{
+	width:					100%;
+}
+
+#end_cnt{
+	background:				white;
+	padding:				2.5vh;
+	border:					solid 1px gainsboro;
+	border-radius:			6px;
+}
+
+#result_cnt{
+	background:				white;
+	border:					solid 1px gainsboro;
+	border-radius:			6px;
+	height:					80%;
+}
+
+.tbl_examinee{
+	width:					92%;
+	margin-left:			auto;
+	margin-right:			auto;
+	margin-top:				3vh;
+	font-size:				1.6vh;
+}
+
+.col-title-1{
+	text-align:				center;
+	width:					45%;
+}
+
+.col-title-2{
+	width:					9%;
+}
+
+.col-title-3{
+	width:					18%;
+}
+
+.tbl-left-pad{
+	padding-left:			1.5vh;
+}
+
+.tbl-item-color{
+	background-color:		#cccccc;
+	font-weight:			bold;
+}
+
+.tbl-font-name{
+	font-size:				2vh;
+}
+
+.tbl_grade{
+	margin-left:			auto;
+	margin-right:			auto;
+	margin-top:				5vh;
+	text-align:				center;
+}
+
+.tbl-grade-title{
+	width:					15vh;
+	height:					5vh;
+}
+
+.tbl-grade-name{
+	font-weight:			bold;
+	font-size:				2.5vh;
+}
+
+.result_score_message{
+	text-align:				center;
+	border:					solid 1px;
+	margin-left:			auto;
+	margin-right:			auto;
+	margin-top:				9vh;
+	height:					5vh;
+	width:					65vh;
+	padding:				1vh;
+	font-size:				2.3vh;
+	font-weight:			bold;
+}
+
+#btn_result_score{
+	width:					23vh;
+	height:					7vh;
+	border-radius:			6px;
+	font-size:				3vh;
+	border:					solid 1px;
+}
+
+
+/*
+.dialog_check_1  {
+	font-size:20px;
+	font-weight:bold; 
+	color:#0070C0;
+}
+
+.dialog_check_2 {
+	background-color:		#FFF2CC;
+	margin-bottom:			5px;
+}
+
+.dialog_check_2  p {
+	font-size:				20px;
+	font-weight:			bold; 
+}
+
+.dialog_check_3  {
+	margin-top:10px;
+	font-size:15px;
+	color:#0070C0;
+}
+
+#other_dialog_check {
+    width: 10vh;
+    height: 4vh;
+    font-size: 2vh;
+    border-radius: 7px;
+}
+*/
+
+
+.dialog_check_1{
+	font-size:				3.2vh;
+	font-weight:			bold;
+	color:					#0070c0;
+}
+
+.dialog_check_2{
+	background-color:		#fff2cc;
+	margin-bottom:			3vh;
+	padding:				2vh 1vh 3vh 1vh;
+	font-size:				2.2vh;
+}
+
+.dialog_check_3{
+	font-size:				3vh;
+	color:					#0070c0;
+}
+
+.dialog_check_2 p{
+	font-size:				2.8vh;
+	font-weight:			bold;
+	margin-bottom:			3vh;
+}
+
+#other_dialog_check{
+	width:					20vh;
+	height:					6vh;
+	font-size:				2vh;
+	border-radius:			7px;
+}
+
+.dialogcheckClass .ui-widget-header{
+	background:#ffffff;
+	color:black;
+}
+
+.w_word {
+	font-size: 1.1vh;
+}
