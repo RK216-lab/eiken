@@ -184,23 +184,40 @@ const App: React.FC = () => {
     }
   };
 
-  const handleManualGrade = (questionId: string, type: string, value: boolean | number) => {
+  const handleManualGrade = (questionId: string, type: string, value: boolean | number | Record<string, number>) => {
     setGradingMarks(prev => ({ ...prev, [`${type}_${questionId}`]: value }));
   };
 
   const getSectionScore = (type: QuestionType) => {
     const sectionQs = questions.filter(q => q.type === type);
     if (type === 'writing') {
-      const q = sectionQs[0];
-      return q ? (gradingMarks[`${type}_${q.id}`] as number || 0) : 0;
+      return sectionQs.reduce((sum, q) => {
+        const marks = gradingMarks[`${type}_${q.id}`] as Record<string, number>;
+        if (!marks) return sum;
+        return sum + (marks.content || 0) + (marks.structure || 0) + (marks.vocab || 0) + (marks.grammar || 0);
+      }, 0);
     }
     return sectionQs.filter(q => gradingMarks[`${type}_${q.id}`] === true).length;
   };
 
   const getTotalPossible = (type: QuestionType) => {
-    if (type === 'writing') return 16;
-    return questions.filter(q => q.type === type).length;
+    const sectionQs = questions.filter(q => q.type === type);
+    if (type === 'writing') return sectionQs.length * 16;
+    return sectionQs.length;
   };
+
+  // PASS FAIL THRESHOLD (Roughly 65%)
+  const isPass = useMemo(() => {
+    const rScore = getSectionScore('reading');
+    const lScore = getSectionScore('listening');
+    const wScore = getSectionScore('writing');
+    const rTotal = getTotalPossible('reading');
+    const lTotal = getTotalPossible('listening');
+    const wTotal = getTotalPossible('writing');
+    const totalScore = rScore + lScore + wScore;
+    const totalPossible = rTotal + lTotal + wTotal;
+    return totalPossible > 0 && (totalScore / totalPossible) >= 0.65;
+  }, [gradingMarks, questions]);
 
   // PERSISTENCE: Save results to localStorage
   useEffect(() => {
@@ -209,11 +226,12 @@ const App: React.FC = () => {
         date: new Date().toISOString(),
         gradingMarks,
         answers,
-        questions
+        questions,
+        isPass
       };
       localStorage.setItem('eiken_latest_result', JSON.stringify(resultData));
     }
-  }, [state, gradingMarks, answers, questions]);
+  }, [state, gradingMarks, answers, questions, isPass]);
 
   if (showPrintView) {
     const wrongQs = questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false || (q.type === 'writing' && (gradingMarks[`${q.type}_${q.id}`] as number) < 16));
@@ -275,7 +293,7 @@ const App: React.FC = () => {
           <h1 style={{ borderBottom: '2px solid #eee', paddingBottom: '2vh', textAlign: 'center' }}>自己採点</h1>
           <p style={{ textAlign: 'center', color: '#666', marginBottom: '4vh' }}>
             選択肢の問題は「正解の番号」を押すと自動で判定されます。<br />
-            ライティングは 0〜16 点の間で点数を入力してください。
+            ライティングは 4つの観点でそれぞれ 1〜4点を選択してください。
           </p>
 
           <div style={{ marginTop: '4vh' }}>
@@ -293,7 +311,7 @@ const App: React.FC = () => {
                   boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
                   display: 'flex',
                   gap: '4vh',
-                  borderLeft: isMarked ? (isCorrect || typeof gradingMarks[`${q.type}_${q.id}`] === 'number' ? '8px solid #28a745' : '8px solid #dc3545') : '8px solid #ccc'
+                  borderLeft: isMarked ? (isCorrect || q.type === 'writing' ? '8px solid #28a745' : '8px solid #dc3545') : '8px solid #ccc'
                 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: '2vh', marginBottom: '1.5vh', color: '#555' }}>
@@ -310,23 +328,45 @@ const App: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="grading-controls" style={{ minWidth: '24vh', display: 'flex', flexDirection: 'column', gap: '1.5vh', justifyContent: 'center' }}>
+                  <div className="grading-controls" style={{ minWidth: '40vh', display: 'flex', flexDirection: 'column', gap: '1.5vh', justifyContent: 'center' }}>
                     {q.type === 'writing' ? (
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ marginBottom: '1vh', fontWeight: 700 }}>配点 (0-16)</div>
-                        <input
-                          type="number"
-                          min="0"
-                          max="16"
-                          value={gradingMarks[`${q.type}_${q.id}`] as number || 0}
-                          onChange={(e) => handleManualGrade(q.id, q.type, parseInt(e.target.value) || 0)}
-                          style={{ width: '100%', padding: '1.5vh', fontSize: '2.5vh', textAlign: 'center', borderRadius: '8px', border: '2px solid #1e3c72' }}
-                        />
+                      <div className="writing-grading-grid">
+                        {[
+                          { key: 'content', label: '内容' },
+                          { key: 'structure', label: '構成' },
+                          { key: 'vocab', label: '語彙' },
+                          { key: 'grammar', label: '文法' }
+                        ].map(criteria => {
+                          const currentVal = (gradingMarks[`${q.type}_${q.id}`] as Record<string, number>)?.[criteria.key] || 0;
+                          return (
+                            <div key={criteria.key} className="criteria-row" style={{ display: 'flex', alignItems: 'center', gap: '1.5vh', marginBottom: '1vh' }}>
+                              <div style={{ width: '6vh', fontWeight: 700 }}>{criteria.label}</div>
+                              <div style={{ display: 'flex', gap: '1vh', flex: 1 }}>
+                                {[1, 2, 3, 4].map(pt => (
+                                  <button
+                                    key={pt}
+                                    className={`tool-btn ${currentVal === pt ? 'active-model' : ''}`}
+                                    onClick={() => {
+                                      const currentMarks = (gradingMarks[`${q.type}_${q.id}`] as Record<string, number>) || {};
+                                      handleManualGrade(q.id, q.type, { ...currentMarks, [criteria.key]: pt });
+                                    }}
+                                    style={{ flex: 1, padding: '1vh', fontSize: '1.8vh' }}
+                                  >
+                                    {pt}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div style={{ marginTop: '1vh', textAlign: 'right', fontWeight: 800, fontSize: '2.2vh', color: '#1e3c72' }}>
+                          合計: {Object.values((gradingMarks[`${q.type}_${q.id}`] as Record<string, number>) || {}).reduce((a, b) => a + b, 0)} / 16
+                        </div>
                       </div>
                     ) : (
                       <>
                         <div style={{ textAlign: 'center', fontSize: '1.4vh', color: '#888', marginBottom: '0.5vh' }}>模範解答を選択</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1vh' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1vh' }}>
                           {[1, 2, 3, 4].map(num => (
                             <button
                               key={num}
@@ -343,12 +383,12 @@ const App: React.FC = () => {
                             className={`toggle-btn correct ${isCorrect === true ? 'active' : ''}`}
                             onClick={() => handleManualGrade(q.id, q.type, true)}
                             style={{ flex: 1, margin: 0 }}
-                          >◯</button>
+                          >◯ 正解</button>
                           <button
                             className={`toggle-btn incorrect ${isCorrect === false ? 'active' : ''}`}
                             onClick={() => handleManualGrade(q.id, q.type, false)}
                             style={{ flex: 1, margin: 0 }}
-                          >✕</button>
+                          >✕ 不正解</button>
                         </div>
                       </>
                     )}
@@ -376,53 +416,106 @@ const App: React.FC = () => {
 
     return (
       <div className="modal-overlay">
-        <div className="result-card eiken-report" style={{ width: '90%', maxWidth: '1100px', padding: '0', overflow: 'hidden' }}>
-          <div className="report-header">
-            <div className="report-title-main">英検 S-CBT 成績表 (模擬)</div>
-            <div className="report-date">{new Date().toLocaleDateString('ja-JP')} 実施</div>
+        <div className="result-card eiken-certificate" style={{ width: '90%', maxWidth: '1000px', padding: '0', overflowY: 'auto', background: '#fff' }}>
+          {/* Certificate Header Decor */}
+          <div className="certificate-border-container">
+            <div className="cert-inner-body">
+              <div className="cert-top-area">
+                <div className="cert-logo">EIKEN S-CBT</div>
+                <div className="cert-exam-name">実用英語技能検定 準1級</div>
+                <div className="cert-title-jp">成績証明書（模擬演習）</div>
+              </div>
+
+              <div className="cert-main-grid">
+                <div className="cert-left-panel">
+                  <div className="pass-fail-seal-container">
+                    <div className={`pass-fail-seal ${isPass ? 'pass' : 'fail'}`}>
+                      {isPass ? '合格' : '不合格'}
+                    </div>
+                  </div>
+                  <div className="total-score-summary">
+                    <div className="summary-label">総合点</div>
+                    <div className="summary-value">{rScore + lScore + wScore} <span>/ {rTotal + lTotal + wTotal}</span></div>
+                  </div>
+                </div>
+
+                <div className="cert-right-panel">
+                  <table className="cert-score-table">
+                    <thead>
+                      <tr>
+                        <th>技能</th>
+                        <th>得点 / 満点</th>
+                        <th>比率</th>
+                        <th>推移</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Reading</td>
+                        <td className="score-cell">{rScore} / {rTotal}</td>
+                        <td>{Math.round((rScore / rTotal) * 100 || 0)}%</td>
+                        <td><div className="progress-bar-small"><div className="bar" style={{ width: `${(rScore / rTotal) * 100}%` }}></div></div></td>
+                      </tr>
+                      <tr>
+                        <td>Listening</td>
+                        <td className="score-cell">{lScore} / {lTotal}</td>
+                        <td>{Math.round((lScore / lTotal) * 100 || 0)}%</td>
+                        <td><div className="progress-bar-small"><div className="bar" style={{ width: `${(lScore / lTotal) * 100}%` }}></div></div></td>
+                      </tr>
+                      <tr>
+                        <td>Writing</td>
+                        <td className="score-cell">{wScore} / {wTotal}</td>
+                        <td>{Math.round((wScore / wTotal) * 100 || 0)}%</td>
+                        <td><div className="progress-bar-small"><div className="bar" style={{ width: `${(wScore / wTotal) * 100}%`, background: '#c69c6d' }}></div></div></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Writing Criteria Detail */}
+              <div className="writing-detail-section">
+                <div className="detail-title">ライティング観点別判定</div>
+                <div className="criteria-grid-cert">
+                  {questions.filter(q => q.type === 'writing').map((q, idx) => {
+                    const marks = (gradingMarks[`${q.type}_${q.id}`] as Record<string, number>) || {};
+                    return (
+                      <div key={idx} className="cert-writing-q-box">
+                        <div className="q-label">Question {q.id} ({q.category})</div>
+                        <div className="criteria-scores">
+                          <span>内容: {marks.content || 0}</span>
+                          <span>構成: {marks.structure || 0}</span>
+                          <span>語彙: {marks.vocab || 0}</span>
+                          <span>文法: {marks.grammar || 0}</span>
+                          <span className="q-total">計: {(marks.content || 0) + (marks.structure || 0) + (marks.vocab || 0) + (marks.grammar || 0)}/16</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="cert-footer">
+                <div className="cert-footer-info">
+                  実施日: {new Date().toLocaleDateString('ja-JP')} | Antigravity Eiken Simulator
+                </div>
+                <div className="cert-stamps">
+                  <div className="stamp">検定印</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div style={{ padding: '4vh' }}>
-            <div className="score-summary-grid">
-              <div className="score-box">
-                <div className="score-label">Reading</div>
-                <div className="score-value">{rScore}<span className="score-total"> / {rTotal}</span></div>
-                <div className="score-percent">{Math.round((rScore / rTotal) * 100 || 0)}%</div>
-              </div>
-              <div className="score-box">
-                <div className="score-label">Listening</div>
-                <div className="score-value">{lScore}<span className="score-total"> / {lTotal}</span></div>
-                <div className="score-percent">{Math.round((lScore / lTotal) * 100 || 0)}%</div>
-              </div>
-              <div className="score-box highlight">
-                <div className="score-label">Writing</div>
-                <div className="score-value">{wScore}<span className="score-total"> / {wTotal}</span></div>
-                <div className="score-percent">{Math.round((wScore / wTotal) * 100 || 0)}%</div>
-              </div>
-            </div>
-
-            <div className="action-buttons-row" style={{ marginTop: '4vh', display: 'flex', gap: '2vh', justifyContent: 'center' }}>
-              <button className="btn-premium" onClick={() => setShowPrintView(true)}>
-                <span>🖨️</span> 練習プリントを出力
-              </button>
-              <button className="btn-premium secondary" onClick={() => window.location.reload()}>
-                <span>🔄</span> 新しい試験を開始
-              </button>
-            </div>
-
-            <div className="wrong-questions-section" style={{ marginTop: '6vh', textAlign: 'left' }}>
-              <h2 className="section-title">間違えた問題の復習</h2>
-              <div className="wrong-list">
-                {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).map((q, idx) => (
-                  <div key={idx} className="wrong-item">
-                    <span className="wrong-cat">[{q.type.toUpperCase()}]</span>
-                    <span className="wrong-id">({q.id})</span>
-                    <span className="wrong-text">{q.question.substring(0, 80)}...</span>
-                  </div>
-                ))}
-                {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).length === 0 && <p style={{ textAlign: 'center', padding: '4vh', color: '#666' }}>素晴らしい！全問正解です。</p>}
-              </div>
-            </div>
+          <div className="no-print cert-actions" style={{ padding: '2vh', background: '#f5f5f5', borderTop: '1px solid #ddd', textAlign: 'center', display: 'flex', gap: '2vh', justifyContent: 'center' }}>
+            <button className="btn-premium" onClick={() => window.print()}>
+              成績表をダウンロード (PDF)
+            </button>
+            <button className="btn-premium secondary" onClick={() => setShowPrintView(true)}>
+              練習プリントを出力
+            </button>
+            <button className="btn-premium secondary" onClick={() => window.location.reload()}>
+              トップに戻る
+            </button>
           </div>
         </div>
       </div>

@@ -803,3 +803,244 @@ textarea.writing-textarea {
   line-height: 1.5;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
+
+/* Certificate Layout refinements */
+.eiken-certificate {
+  font-family: 'Inter', 'Noto Sans JP', serif;
+  border: 1px solid #c69c6d;
+}
+
+.certificate-border-container {
+  padding: 30px;
+  border: 15px double #c69c6d;
+  background: white;
+  min-height: 100%;
+}
+
+.cert-top-area {
+  text-align: center;
+  border-bottom: 2px solid #333;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+.cert-logo {
+  font-family: serif;
+  font-size: 2.5vh;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #1a1a1a;
+}
+
+.cert-exam-name {
+  font-size: 3vh;
+  margin: 10px 0;
+  font-weight: 700;
+}
+
+.cert-title-jp {
+  font-size: 2.5vh;
+  color: #555;
+}
+
+.cert-main-grid {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.cert-left-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #eee;
+}
+
+.cert-right-panel {
+  flex: 2;
+}
+
+.pass-fail-seal-container {
+  margin-bottom: 20px;
+}
+
+.pass-fail-seal {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4vh;
+  font-weight: 900;
+  transform: rotate(-15deg);
+  border: 8px double;
+  background: white;
+}
+
+.pass-fail-seal.pass {
+  color: #dc3545;
+  border-color: #dc3545;
+  box-shadow: 0 0 0 5px white, 0 0 0 7px #dc3545;
+}
+
+.pass-fail-seal.fail {
+  color: #666;
+  border-color: #666;
+  box-shadow: 0 0 0 5px white, 0 0 0 7px #666;
+}
+
+.total-score-summary {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 2vh;
+  color: #666;
+}
+
+.summary-value {
+  font-size: 5vh;
+  font-weight: 900;
+  color: #1a1a1a;
+}
+
+.summary-value span {
+  font-size: 2vh;
+  color: #999;
+}
+
+.cert-score-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cert-score-table th,
+.cert-score-table td {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  text-align: center;
+}
+
+.score-cell {
+  font-weight: 800;
+  font-size: 2.5vh;
+}
+
+.progress-bar-small {
+  width: 100%;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.progress-bar-small .bar {
+  height: 100%;
+  background: #1e3c72;
+  border-radius: 4px;
+}
+
+/* Writing Detail in Certificate */
+.writing-detail-section {
+  border-top: 2px solid #eee;
+  padding-top: 30px;
+}
+
+.detail-title {
+  font-size: 2.2vh;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.criteria-grid-cert {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.cert-writing-q-box {
+  background: #fafafa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.cert-writing-q-box .q-label {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.criteria-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  font-size: 1.6vh;
+}
+
+.criteria-scores .q-total {
+  font-weight: 900;
+  color: #1e3c72;
+  margin-left: auto;
+}
+
+.cert-footer {
+  margin-top: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.cert-footer-info {
+  font-size: 1.4vh;
+  color: #888;
+}
+
+.cert-stamps {
+  display: flex;
+  gap: 20px;
+}
+
+.stamp {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #dc3545;
+  color: #dc3545;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2vh;
+  font-weight: 700;
+  transform: rotate(5deg);
+}
+
+@media print {
+  .modal-overlay {
+    background: white !important;
+    position: static !important;
+  }
+
+  .result-card {
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
+.writing-grading-grid {
+  background: #fdfdfd;
+  padding: 2vh;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
