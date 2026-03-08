@@ -162,8 +162,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleManualGrade = (id: string, isCorrect: boolean) => {
-    setGradingMarks(prev => ({ ...prev, [id]: isCorrect }));
+  const handleManualGrade = (questionId: string, type: string, isCorrect: boolean) => {
+    setGradingMarks(prev => ({ ...prev, [`${type}_${questionId}`]: isCorrect }));
   };
 
   if (state === 'input') {
@@ -195,7 +195,7 @@ const App: React.FC = () => {
 
           <div style={{ marginTop: '4vh' }}>
             {questions.map((q, idx) => (
-              <div key={idx} style={{
+              <div key={`${q.type}_${q.id}_${idx}`} style={{
                 marginBottom: '4vh',
                 padding: '3vh',
                 borderRadius: '12px',
@@ -210,24 +210,24 @@ const App: React.FC = () => {
                   </div>
                   <div style={{ fontSize: '2.2vh', marginBottom: '2vh' }}>{q.question}</div>
                   <div style={{ background: '#f8f9fa', padding: '2vh', borderRadius: '8px', fontSize: '2vh' }}>
-                    <strong>あなたの回答:</strong> {answers[q.id] || '未回答'}
+                    <strong>あなたの回答:</strong> {answers[`${q.type}_${q.id}`] || '未回答'}
                   </div>
-                  {q.type === 'writing' && answers[q.id] && (
+                  {q.type === 'writing' && answers[`${q.type}_${q.id}`] && (
                     <div style={{ marginTop: '2vh', whiteSpace: 'pre-wrap', fontStyle: 'italic', borderTop: '1px solid #ddd', paddingTop: '2vh' }}>
-                      {answers[q.id]}
+                      {answers[`${q.type}_${q.id}`]}
                     </div>
                   )}
                 </div>
                 <div className="manual-toggle" style={{ flexDirection: 'column', justifyContent: 'center', minWidth: '18vh' }}>
                   <button
-                    className={`toggle-btn correct ${gradingMarks[q.id] === true ? 'active' : ''}`}
-                    onClick={() => handleManualGrade(q.id, true)}
+                    className={`toggle-btn correct ${gradingMarks[`${q.type}_${q.id}`] === true ? 'active' : ''}`}
+                    onClick={() => handleManualGrade(q.id, q.type, true)}
                   >
                     ◯ 正解
                   </button>
                   <button
-                    className={`toggle-btn incorrect ${gradingMarks[q.id] === false ? 'active' : ''}`}
-                    onClick={() => handleManualGrade(q.id, false)}
+                    className={`toggle-btn incorrect ${gradingMarks[`${q.type}_${q.id}`] === false ? 'active' : ''}`}
+                    onClick={() => handleManualGrade(q.id, q.type, false)}
                   >
                     ✕ 不正解
                   </button>
@@ -268,19 +268,19 @@ const App: React.FC = () => {
               <span>復習リスト</span>
             </h2>
             <div style={{ maxHeight: '40vh', overflowY: 'auto', marginTop: '2vh', paddingRight: '2vh' }}>
-              {questions.filter(q => gradingMarks[q.id] === false).map(q => (
-                <div key={q.id} style={{ padding: '2vh', background: '#fff1f0', borderRadius: '8px', marginBottom: '1.5vh', border: '1px solid #ffa39e' }}>
+              {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).map((q, idx) => (
+                <div key={`${q.type}_${q.id}_${idx}`} style={{ padding: '2vh', background: '#fff1f0', borderRadius: '8px', marginBottom: '1.5vh', border: '1px solid #ffa39e' }}>
                   <strong>({q.id}) {q.category}</strong>: {q.question.substring(0, 100)}...
                 </div>
               ))}
-              {questions.filter(q => gradingMarks[q.id] === false).length === 0 && <p>すべての問題に正解しました！</p>}
+              {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).length === 0 && <p>すべての問題に正解しました！</p>}
             </div>
 
             <div style={{ marginTop: '5vh' }}>
               <h2 style={{ borderBottom: '2px solid #1e3c72', paddingBottom: '1vh' }}>ライティング回答内容</h2>
-              {questions.filter(q => q.type === 'writing').map(q => (
-                <div key={q.id} style={{ marginTop: '2vh', padding: '3vh', background: '#f8f9fa', borderRadius: '12px', whiteSpace: 'pre-wrap', fontFamily: 'serif', fontSize: '2.2vh', border: '1px solid #ddd' }}>
-                  {answers[q.id] || '(回答なし)'}
+              {questions.filter(q => q.type === 'writing').map((q, idx) => (
+                <div key={`${q.type}_${q.id}_${idx}`} style={{ marginTop: '2vh', padding: '3vh', background: '#f8f9fa', borderRadius: '12px', whiteSpace: 'pre-wrap', fontFamily: 'serif', fontSize: '2.2vh', border: '1px solid #ddd' }}>
+                  {answers[`${q.type}_${q.id}`] || '(回答なし)'}
                 </div>
               ))}
             </div>
@@ -322,27 +322,96 @@ const App: React.FC = () => {
 
           {currentQuestion ? (
             <>
-              {currentQuestion.type === 'reading' ? (
+              {currentQuestion.type === 'listening' ? (
+                <div className="listening-view" style={{ padding: '4vh', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <div style={{ backgroundColor: '#e0e0e0', padding: '2vh', borderRadius: '8px', marginBottom: '2vh', display: 'flex', alignItems: 'center' }}>
+                     <div style={{ background: '#999', color: 'white', padding: '1vh 2vh', borderRadius: '20px', marginRight: '2vh', fontWeight: 'bold', fontSize: '1.8vh' }}>{currentQuestion.category}</div>
+                     <div style={{ fontSize: '2vh', fontWeight: 500 }}>{currentQuestion.question || "対話を聞き、その最後の文に対する応答として最も適切なものを、放送される選択肢の中から一つ選びなさい。"}</div>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', marginTop: '2vh' }}>
+                    <div style={{ marginRight: '4vh', fontSize: '2.5vh', fontWeight: 'bold' }}>No.{currentQuestion.id}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh', flex: 1, maxWidth: '400px' }}>
+                      {currentQuestion.options.length > 0 ? currentQuestion.options.map((opt, i) => (
+                        <button 
+                          key={i}
+                          className={`listening-btn ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'active' : ''}`}
+                          onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: i + 1 })}
+                        >
+                          {i + 1}
+                        </button>
+                      )) : [1,2,3].map(num => (
+                        <button 
+                          key={num}
+                          className={`listening-btn ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === num ? 'active' : ''}`}
+                          onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: num })}
+                        >
+                          {num}
+                        </button>
+                      ))}
+                      <div className="review-checkbox-area" style={{ marginTop: '4vh' }}>
+                        <input
+                          type="checkbox"
+                          id={`review-${currentQuestion.id}`}
+                          checked={!!reviewLater[`${currentQuestion.type}_${currentQuestion.id}`]}
+                          onChange={(e) => setReviewLater({ ...reviewLater, [`${currentQuestion.type}_${currentQuestion.id}`]: e.target.checked })}
+                        />
+                        <label htmlFor={`review-${currentQuestion.id}`}>目印をつける</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : currentQuestion.type === 'writing' ? (
+                <div className="writing-single-view">
+                  <div className="writing-prompt-area" style={{ backgroundColor: '#f9f9f9', padding: '3vh', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '2vh' }}>
+                    <div style={{ fontSize: '1.8vh', lineHeight: '1.6' }}>
+                      {currentPassageLines(currentQuestion.passage || "").map((line, i) => <div key={i}>{line}</div>)}
+                    </div>
+                  </div>
+                  <div className="writing-input-area" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div className="word-count-display">
+                      <WordCounter text={answers[`${currentQuestion.type}_${currentQuestion.id}`] as string || ''} />
+                    </div>
+                    <textarea
+                      className="writing-textarea"
+                      style={{ flex: 1, minHeight: '30vh', resize: 'vertical' }}
+                      value={answers[`${currentQuestion.type}_${currentQuestion.id}`] as string || ''}
+                      onChange={(e) => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: e.target.value })}
+                    />
+                    <div className="tool-header" style={{ justifyContent: 'flex-end', marginTop: '1vh', border: 'none', background: 'transparent' }}>
+                      <button className="tool-btn">コピー</button>
+                      <button className="tool-btn">貼り付け</button>
+                      <button className="tool-btn">全体参照</button>
+                      <div className="review-checkbox-area" style={{ margin: 0, paddingLeft: '2vh', border: 0 }}>
+                        <input
+                          type="checkbox"
+                          id={`review-${currentQuestion.id}`}
+                          checked={!!reviewLater[`${currentQuestion.type}_${currentQuestion.id}`]}
+                          onChange={(e) => setReviewLater({ ...reviewLater, [`${currentQuestion.type}_${currentQuestion.id}`]: e.target.checked })}
+                        />
+                        <label htmlFor={`review-${currentQuestion.id}`}>あとで見直す</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : currentQuestion.passage ? (
                 <div className="split-view">
                   <div className="passage-pane">
-                    {currentQuestion.passage && (
-                      <div className="passage-content" style={{ fontSize: '2.2vh', lineHeight: '1.6' }}>
-                        {currentPassageLines(currentQuestion.passage).map((line, i) => (
-                          <div key={i} style={{ marginBottom: '1vh', textAlign: line.match(/^[A-Z\s]+$/) ? 'center' : 'left', fontWeight: line.match(/^[A-Z\s]+$/) ? 700 : 400 }}>
-                            {line}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="passage-content" style={{ fontSize: '2.2vh', lineHeight: '1.6' }}>
+                      {currentPassageLines(currentQuestion.passage).map((line, i) => (
+                        <div key={i} style={{ marginBottom: '1vh', textAlign: line.match(/^[A-Z\s]+$/) ? 'center' : 'left', fontWeight: line.match(/^[A-Z\s]+$/) ? 700 : 400 }}>
+                          {line}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="question-pane">
-                    <div style={{ marginBottom: '2vh', fontSize: '2vh' }}>
+                    <div className="question-text" style={{ marginBottom: '2vh', fontSize: '2vh' }}>
                       ({currentQuestion.id}) {currentQuestion.question}
                     </div>
                     <div className="options-area">
                       {currentQuestion.options.map((opt, i) => (
-                        <div key={i} className="option-row" onClick={() => setAnswers({ ...answers, [currentQuestion.id]: i + 1 })}>
-                          <div className={`option-box ${answers[currentQuestion.id] === i + 1 ? 'selected' : ''}`}>
+                        <div key={i} className="option-row" onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: i + 1 })}>
+                          <div className={`option-box ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'selected' : ''}`}>
                             {i + 1}
                           </div>
                           <span style={{ fontSize: '1.8vh' }}>{opt}</span>
@@ -353,52 +422,37 @@ const App: React.FC = () => {
                       <input
                         type="checkbox"
                         id={`review-${currentQuestion.id}`}
-                        checked={!!reviewLater[currentQuestion.id]}
-                        onChange={(e) => setReviewLater({ ...reviewLater, [currentQuestion.id]: e.target.checked })}
+                        checked={!!reviewLater[`${currentQuestion.type}_${currentQuestion.id}`]}
+                        onChange={(e) => setReviewLater({ ...reviewLater, [`${currentQuestion.type}_${currentQuestion.id}`]: e.target.checked })}
                       />
                       <label htmlFor={`review-${currentQuestion.id}`}>あとで見直す</label>
                     </div>
                   </div>
                 </div>
-              ) : currentQuestion.type === 'writing' ? (
-                <div className="writing-layout">
-                  <div className="writing-prompt-pane">
-                    <div style={{ fontSize: '1.8vh', lineHeight: '1.6' }}>
-                      {currentPassageLines(currentQuestion.passage || "").map((line, i) => <div key={i}>{line}</div>)}
-                    </div>
-                  </div>
-                  <div className="writing-answer-pane">
-                    <div className="tool-header">
-                      <button className="tool-btn">コピー</button>
-                      <button className="tool-btn">貼り付け</button>
-                      <button className="tool-btn">全体参照</button>
-                      <div className="review-checkbox-area" style={{ margin: 0, paddingTop: 0, border: 0 }}>
-                        <input
-                          type="checkbox"
-                          id={`review-${currentQuestion.id}`}
-                          checked={!!reviewLater[currentQuestion.id]}
-                          onChange={(e) => setReviewLater({ ...reviewLater, [currentQuestion.id]: e.target.checked })}
-                        />
-                        <label htmlFor={`review-${currentQuestion.id}`}>あとで見直す</label>
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, position: 'relative', marginTop: '1vh' }}>
-                      <textarea
-                        className="writing-textarea"
-                        value={answers[currentQuestion.id] as string || ''}
-                        onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
-                      />
-                      <div className="word-count-display">
-                        <WordCounter text={answers[currentQuestion.id] as string || ''} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
               ) : (
-                <div className="listening-view" style={{ padding: '4vh' }}>
-                  {/* Listening layout placeholder if needed */}
-                  <h2>Listening Phase</h2>
-                  <p>({currentQuestion.id}) {currentQuestion.question}</p>
+                <div className="single-pane-view">
+                  <div className="question-text" style={{ fontSize: '2vh', marginBottom: '4vh' }}>
+                    ({currentQuestion.id}) {currentQuestion.question}
+                  </div>
+                  <div className="options-area" style={{ maxWidth: '600px', marginLeft: '2vh' }}>
+                    {currentQuestion.options.map((opt, i) => (
+                      <div key={i} className="option-row" onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: i + 1 })}>
+                        <div className={`option-box ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'selected' : ''}`}>
+                          {i + 1}
+                        </div>
+                        <span style={{ fontSize: '1.8vh' }}>{opt}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="review-checkbox-area" style={{ marginTop: 'auto', paddingTop: '4vh' }}>
+                    <input
+                      type="checkbox"
+                      id={`review-${currentQuestion.id}`}
+                      checked={!!reviewLater[`${currentQuestion.type}_${currentQuestion.id}`]}
+                      onChange={(e) => setReviewLater({ ...reviewLater, [`${currentQuestion.type}_${currentQuestion.id}`]: e.target.checked })}
+                    />
+                    <label htmlFor={`review-${currentQuestion.id}`}>あとで見直す</label>
+                  </div>
                 </div>
               )}
             </>
@@ -452,22 +506,22 @@ const App: React.FC = () => {
                         </span>
                         <div className="sidebar-bubbles">
                           {q.type === 'writing' ? (
-                            <div className={`bubble writing-bubble ${answers[q.id] ? 'active' : ''}`}>
-                              {answers[q.id] ? '解答済' : <span style={{ color: '#888' }}>未解答</span>}
+                            <div className={`bubble writing-bubble ${answers[`${q.type}_${q.id}`] ? 'active' : ''}`}>
+                              {answers[`${q.type}_${q.id}`] ? '解答済' : <span style={{ color: '#888' }}>未解答</span>}
                             </div>
                           ) : (
-                            [1, 2, 3, 4].map(num => (
+                            Array.from({ length: q.type === 'listening' ? 3 : 4 }, (_, i) => i + 1).map(num => (
                               <div
                                 key={num}
-                                className={`bubble ${answers[q.id] === num ? 'active' : ''}`}
-                                onClick={() => setAnswers({ ...answers, [q.id]: num })}
+                                className={`bubble ${answers[`${q.type}_${q.id}`] === num ? 'active' : ''}`}
+                                onClick={() => setAnswers({ ...answers, [`${q.type}_${q.id}`]: num })}
                               >
                                 {num}
                               </div>
                             ))
                           )}
                         </div>
-                        {reviewLater[q.id] && (
+                        {reviewLater[`${q.type}_${q.id}`] && (
                           <span style={{ background: '#ffff00', color: '#000', fontSize: '1vh', padding: '0.2vh 0.5vh', borderRadius: '2px', fontWeight: 700, marginLeft: '0.5vh', border: '1px solid #000' }}>あとで</span>
                         )}
                       </div>
