@@ -1,3 +1,38 @@
+# User assets
 /2025-3-1ji-p1kyu.pdf
 /英検S-CBT体験版 準2級 リーディングテスト_ライティングテスト（タイピング型）.html
 /英検S-CBT体験版 準2級 リーディングテスト_ライティングテスト（タイピング型）_files
+
+# Node.js
+**/node_modules
+**/logs
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build artifacts
+**/dist
+**/dist-ssr
+**/*.local
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment Variables (Security!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
