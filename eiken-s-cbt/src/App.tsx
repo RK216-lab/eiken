@@ -325,22 +325,22 @@ const App: React.FC = () => {
               {currentQuestion.type === 'listening' ? (
                 <div className="listening-view" style={{ padding: '4vh', display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <div style={{ backgroundColor: '#e0e0e0', padding: '2vh', borderRadius: '8px', marginBottom: '2vh', display: 'flex', alignItems: 'center' }}>
-                     <div style={{ background: '#999', color: 'white', padding: '1vh 2vh', borderRadius: '20px', marginRight: '2vh', fontWeight: 'bold', fontSize: '1.8vh' }}>{currentQuestion.category}</div>
-                     <div style={{ fontSize: '2vh', fontWeight: 500 }}>{currentQuestion.question || "対話を聞き、その最後の文に対する応答として最も適切なものを、放送される選択肢の中から一つ選びなさい。"}</div>
+                    <div style={{ background: '#999', color: 'white', padding: '1vh 2vh', borderRadius: '20px', marginRight: '2vh', fontWeight: 'bold', fontSize: '1.8vh' }}>{currentQuestion.category}</div>
+                    <div style={{ fontSize: '2vh', fontWeight: 500 }}>{currentQuestion.question || "対話を聞き、その最後の文に対する応答として最も適切なものを、放送される選択肢の中から一つ選びなさい。"}</div>
                   </div>
                   <div style={{ flex: 1, display: 'flex', marginTop: '2vh' }}>
                     <div style={{ marginRight: '4vh', fontSize: '2.5vh', fontWeight: 'bold' }}>No.{currentQuestion.id}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh', flex: 1, maxWidth: '400px' }}>
-                      {currentQuestion.options.length > 0 ? currentQuestion.options.map((opt, i) => (
-                        <button 
+                      {currentQuestion.options.length > 0 ? currentQuestion.options.map((_, i) => (
+                        <button
                           key={i}
                           className={`listening-btn ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'active' : ''}`}
                           onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: i + 1 })}
                         >
                           {i + 1}
                         </button>
-                      )) : [1,2,3].map(num => (
-                        <button 
+                      )) : [1, 2, 3].map(num => (
+                        <button
                           key={num}
                           className={`listening-btn ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === num ? 'active' : ''}`}
                           onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: num })}
