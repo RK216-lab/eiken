@@ -43,7 +43,7 @@ const parseEikenText = (text: string): Question[] => {
         id: sectionName.match(/\d+/) ? sectionName.match(/\d+/)![0] : 'W',
         type,
         category: sectionName,
-        passage: currentPassage || sectionContent.trim(),
+        passage: currentPassage || (sectionContent.trim()),
         question: "Write your response according to the prompt.",
         options: []
       });
@@ -54,7 +54,13 @@ const parseEikenText = (text: string): Question[] => {
       const qIdRaw = items[j];
       const qIdMatch = qIdRaw.match(/\d+/);
       const qId = qIdMatch ? qIdMatch[0] : `${j}`;
-      const qContent = items[j + 1];
+      let qContent = items[j + 1];
+
+      // BUG FIX: If the qContent contains the next "Passage:", "Article:", or "TOPIC:", truncate it.
+      const nextPassageMatch = qContent.match(/Passage:|Article:|TOPIC:/i);
+      if (nextPassageMatch && nextPassageMatch.index !== undefined) {
+        qContent = qContent.substring(0, nextPassageMatch.index);
+      }
 
       let questionText = "";
       let options: string[] = [];
@@ -97,10 +103,11 @@ const parseEikenText = (text: string): Question[] => {
       });
 
       // Update currentPassage if the next question's content or trailing part of this one has a new passage
-      if (qContent.match(/Passage:|Article:|TOPIC:/i)) {
-        const parts = qContent.split(/Passage:|Article:|TOPIC:/i);
+      const fullNextContent = items[j + 1]; // Use original untruncated content here
+      if (fullNextContent.match(/Passage:|Article:|TOPIC:/i)) {
+        const parts = fullNextContent.split(/Passage:|Article:|TOPIC:/i);
         if (parts.length > 1) {
-          const newPassage = qContent.substring(qContent.search(/Passage:|Article:|TOPIC:/i)).trim();
+          const newPassage = fullNextContent.substring(fullNextContent.search(/Passage:|Article:|TOPIC:/i)).trim();
           // Only update if it's substantial (to avoid catching mid-sentence mentions)
           if (newPassage.length > 50) {
             currentPassage = newPassage.split(/Q\(\d+\)|No\.\s*\d+|Q\d+/)[0];
@@ -125,11 +132,13 @@ const App: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
-  const [gradingMarks, setGradingMarks] = useState<Record<string, boolean>>({});
+  const [gradingMarks, setGradingMarks] = useState<Record<string, boolean | number>>({});
   const [timeLeft, setTimeLeft] = useState(90 * 60);
   const [showConfirm, setShowConfirm] = useState(false);
   const [reviewLater, setReviewLater] = useState<Record<string, boolean>>({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showPrintView, setShowPrintView] = useState(false);
+
 
   // Phase-specific question lists
   const listeningQs = useMemo(() => questions.filter(q => q.type === 'listening'), [questions]);
@@ -175,17 +184,76 @@ const App: React.FC = () => {
     }
   };
 
-  const handleManualGrade = (questionId: string, type: string, isCorrect: boolean) => {
-    setGradingMarks(prev => ({ ...prev, [`${type}_${questionId}`]: isCorrect }));
+  const handleManualGrade = (questionId: string, type: string, value: boolean | number) => {
+    setGradingMarks(prev => ({ ...prev, [`${type}_${questionId}`]: value }));
   };
+
+  const getSectionScore = (type: QuestionType) => {
+    const sectionQs = questions.filter(q => q.type === type);
+    if (type === 'writing') {
+      const q = sectionQs[0];
+      return q ? (gradingMarks[`${type}_${q.id}`] as number || 0) : 0;
+    }
+    return sectionQs.filter(q => gradingMarks[`${type}_${q.id}`] === true).length;
+  };
+
+  const getTotalPossible = (type: QuestionType) => {
+    if (type === 'writing') return 16;
+    return questions.filter(q => q.type === type).length;
+  };
+
+  // PERSISTENCE: Save results to localStorage
+  useEffect(() => {
+    if (state === 'results') {
+      const resultData = {
+        date: new Date().toISOString(),
+        gradingMarks,
+        answers,
+        questions
+      };
+      localStorage.setItem('eiken_latest_result', JSON.stringify(resultData));
+    }
+  }, [state, gradingMarks, answers, questions]);
+
+  if (showPrintView) {
+    const wrongQs = questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false || (q.type === 'writing' && (gradingMarks[`${q.type}_${q.id}`] as number) < 16));
+    return (
+      <div className="print-view">
+        <div className="print-header">
+          <h1>英検 S-CBT 復習用練習プリント</h1>
+          <button className="no-print btn-nav" onClick={() => setShowPrintView(false)}>戻る</button>
+          <button className="no-print btn-finish" onClick={() => window.print()}>印刷する</button>
+        </div>
+        {wrongQs.map((q, idx) => (
+          <div key={idx} className="print-question">
+            <h3>【{q.type === 'reading' ? 'リーディング' : q.type === 'listening' ? 'リスニング' : 'ライティング'}】 ({q.id}) {q.category}</h3>
+            {q.passage && (
+              <div className="print-passage">
+                {currentPassageLines(q.passage).map((line, i) => <div key={i}>{line}</div>)}
+              </div>
+            )}
+            <div className="print-q-text">{q.question}</div>
+            {q.options.length > 0 && (
+              <div className="print-options">
+                {q.options.map((opt, i) => <div key={i}>({i + 1}) {opt}</div>)}
+              </div>
+            )}
+            <div className="print-answer-space">
+              【解答欄】
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (state === 'input') {
     return (
       <div className="start-screen">
         <div className="glass-card">
-          <h1 style={{ textAlign: 'center', marginBottom: '1vh', fontSize: '4vh' }}>英検 S-CBT 準1級 模擬試験</h1>
+          <h1 style={{ textAlign: 'center', marginBottom: '1vh', fontSize: '4vh' }}>英検 S-CBT 模擬試験システム</h1>
           <p style={{ textAlign: 'center', fontSize: '2.2vh', color: '#666', marginBottom: '3vh' }}>
-            下部のテキストエリアに問題データを貼り付けてください。
+            問題データを貼り付けて「試験を開始する」を押してください。
           </p>
           <textarea
             className="json-textarea"
@@ -205,53 +273,93 @@ const App: React.FC = () => {
       <div className="modal-overlay">
         <div className="result-card" style={{ width: '95%', height: '90%', overflowY: 'auto', padding: '4vh' }}>
           <h1 style={{ borderBottom: '2px solid #eee', paddingBottom: '2vh', textAlign: 'center' }}>自己採点</h1>
-          <p style={{ textAlign: 'center', color: '#666' }}>すべての問題に◯（正解）または✕（不正解）をつけてください。</p>
+          <p style={{ textAlign: 'center', color: '#666', marginBottom: '4vh' }}>
+            選択肢の問題は「正解の番号」を押すと自動で判定されます。<br />
+            ライティングは 0〜16 点の間で点数を入力してください。
+          </p>
 
           <div style={{ marginTop: '4vh' }}>
-            {questions.map((q, idx) => (
-              <div key={`${q.type}_${q.id}_${idx}`} style={{
-                marginBottom: '4vh',
-                padding: '3vh',
-                borderRadius: '12px',
-                background: '#fff',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-                display: 'flex',
-                gap: '4vh'
-              }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: '2vh', marginBottom: '1.5vh', color: '#555' }}>
-                    ({q.id}) {q.category}
-                  </div>
-                  <div style={{ fontSize: '2.2vh', marginBottom: '2vh' }}>{q.question}</div>
-                  <div style={{ background: '#f8f9fa', padding: '2vh', borderRadius: '8px', fontSize: '2vh' }}>
-                    <strong>あなたの回答:</strong> {answers[`${q.type}_${q.id}`] || '未回答'}
-                  </div>
-                  {q.type === 'writing' && answers[`${q.type}_${q.id}`] && (
-                    <div style={{ marginTop: '2vh', whiteSpace: 'pre-wrap', fontStyle: 'italic', borderTop: '1px solid #ddd', paddingTop: '2vh' }}>
-                      {answers[`${q.type}_${q.id}`]}
+            {questions.map((q, idx) => {
+              const userAns = answers[`${q.type}_${q.id}`];
+              const isMarked = gradingMarks[`${q.type}_${q.id}`] !== undefined;
+              const isCorrect = gradingMarks[`${q.type}_${q.id}`] === true;
+
+              return (
+                <div key={`${q.type}_${q.id}_${idx}`} style={{
+                  marginBottom: '4vh',
+                  padding: '3vh',
+                  borderRadius: '12px',
+                  background: '#fff',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                  display: 'flex',
+                  gap: '4vh',
+                  borderLeft: isMarked ? (isCorrect || typeof gradingMarks[`${q.type}_${q.id}`] === 'number' ? '8px solid #28a745' : '8px solid #dc3545') : '8px solid #ccc'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '2vh', marginBottom: '1.5vh', color: '#555' }}>
+                      ({q.id}) {q.category}
                     </div>
-                  )}
+                    <div style={{ fontSize: '2.2vh', marginBottom: '2vh' }}>{q.question}</div>
+                    <div style={{ background: '#f8f9fa', padding: '2vh', borderRadius: '8px', fontSize: '2vh', border: '1px solid #eee' }}>
+                      <strong>あなたの回答:</strong> <span style={{ fontSize: '2.4vh', color: '#1e3c72', fontWeight: 800 }}>{userAns || '未回答'}</span>
+                    </div>
+                    {q.type === 'writing' && userAns && (
+                      <div style={{ marginTop: '2vh', whiteSpace: 'pre-wrap', fontStyle: 'italic', borderTop: '1px solid #ddd', paddingTop: '2vh', fontSize: '1.8vh', color: '#444' }}>
+                        {userAns}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grading-controls" style={{ minWidth: '24vh', display: 'flex', flexDirection: 'column', gap: '1.5vh', justifyContent: 'center' }}>
+                    {q.type === 'writing' ? (
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ marginBottom: '1vh', fontWeight: 700 }}>配点 (0-16)</div>
+                        <input
+                          type="number"
+                          min="0"
+                          max="16"
+                          value={gradingMarks[`${q.type}_${q.id}`] as number || 0}
+                          onChange={(e) => handleManualGrade(q.id, q.type, parseInt(e.target.value) || 0)}
+                          style={{ width: '100%', padding: '1.5vh', fontSize: '2.5vh', textAlign: 'center', borderRadius: '8px', border: '2px solid #1e3c72' }}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ textAlign: 'center', fontSize: '1.4vh', color: '#888', marginBottom: '0.5vh' }}>模範解答を選択</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1vh' }}>
+                          {[1, 2, 3, 4].map(num => (
+                            <button
+                              key={num}
+                              className={`tool-btn ${gradingMarks[`${q.type}_${q.id}`] !== undefined && (userAns === num ? isCorrect : !isCorrect) ? 'active-model' : ''}`}
+                              onClick={() => handleManualGrade(q.id, q.type, userAns === num)}
+                              style={{ padding: '1.5vh', fontSize: '2vh', fontWeight: 800 }}
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: '1vh', marginTop: '1vh' }}>
+                          <button
+                            className={`toggle-btn correct ${isCorrect === true ? 'active' : ''}`}
+                            onClick={() => handleManualGrade(q.id, q.type, true)}
+                            style={{ flex: 1, margin: 0 }}
+                          >◯</button>
+                          <button
+                            className={`toggle-btn incorrect ${isCorrect === false ? 'active' : ''}`}
+                            onClick={() => handleManualGrade(q.id, q.type, false)}
+                            style={{ flex: 1, margin: 0 }}
+                          >✕</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div className="manual-toggle" style={{ flexDirection: 'column', justifyContent: 'center', minWidth: '18vh' }}>
-                  <button
-                    className={`toggle-btn correct ${gradingMarks[`${q.type}_${q.id}`] === true ? 'active' : ''}`}
-                    onClick={() => handleManualGrade(q.id, q.type, true)}
-                  >
-                    ◯ 正解
-                  </button>
-                  <button
-                    className={`toggle-btn incorrect ${gradingMarks[`${q.type}_${q.id}`] === false ? 'active' : ''}`}
-                    onClick={() => handleManualGrade(q.id, q.type, false)}
-                  >
-                    ✕ 不正解
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: '4vh' }}>
-            <button className="btn-finish" style={{ width: 'auto', padding: '2vh 10vh' }} onClick={() => setState('results')}>採点を完了して成績表を表示</button>
+          <div style={{ textAlign: 'center', marginTop: '4vh', position: 'sticky', bottom: '0', background: 'rgba(255,255,255,0.9)', padding: '2vh' }}>
+            <button className="btn-finish" style={{ width: 'auto', padding: '2vh 10vh', fontSize: '2.5vh', fontWeight: 800, background: '#1e3c72', color: 'white' }} onClick={() => setState('results')}>採点を完了して成績表を表示</button>
           </div>
         </div>
       </div>
@@ -259,48 +367,63 @@ const App: React.FC = () => {
   }
 
   if (state === 'results') {
-    const correctCount = Object.values(gradingMarks).filter(v => v === true).length;
-    const wrongCount = Object.values(gradingMarks).filter(v => v === false).length;
+    const rScore = getSectionScore('reading');
+    const lScore = getSectionScore('listening');
+    const wScore = getSectionScore('writing');
+    const rTotal = getTotalPossible('reading');
+    const lTotal = getTotalPossible('listening');
+    const wTotal = getTotalPossible('writing');
 
     return (
       <div className="modal-overlay">
-        <div className="result-card" style={{ width: '85%', maxWidth: '1000px', textAlign: 'center' }}>
-          <h1 style={{ color: '#1e3c72', fontSize: '4vh' }}>試験結果レポート</h1>
-          <div style={{ display: 'flex', gap: '4vh', margin: '5vh 0' }}>
-            <div className="score-badge" style={{ borderTopColor: '#28a745' }}>
-              <div style={{ fontSize: '1.8vh', fontWeight: 600 }}>正解数</div>
-              <div style={{ fontSize: '6vh', fontWeight: 800 }}>{correctCount}</div>
-            </div>
-            <div className="score-badge" style={{ borderTopColor: '#dc3545' }}>
-              <div style={{ fontSize: '1.8vh', fontWeight: 600 }}>不正解・見直し</div>
-              <div style={{ fontSize: '6vh', fontWeight: 800 }}>{wrongCount}</div>
-            </div>
+        <div className="result-card eiken-report" style={{ width: '90%', maxWidth: '1100px', padding: '0', overflow: 'hidden' }}>
+          <div className="report-header">
+            <div className="report-title-main">英検 S-CBT 成績表 (模擬)</div>
+            <div className="report-date">{new Date().toLocaleDateString('ja-JP')} 実施</div>
           </div>
 
-          <div style={{ textAlign: 'left', marginTop: '4vh' }}>
-            <h2 style={{ borderBottom: '2px solid #1e3c72', paddingBottom: '1vh', display: 'flex', alignItems: 'center', gap: '1.5vh' }}>
-              <span>復習リスト</span>
-            </h2>
-            <div style={{ maxHeight: '40vh', overflowY: 'auto', marginTop: '2vh', paddingRight: '2vh' }}>
-              {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).map((q, idx) => (
-                <div key={`${q.type}_${q.id}_${idx}`} style={{ padding: '2vh', background: '#fff1f0', borderRadius: '8px', marginBottom: '1.5vh', border: '1px solid #ffa39e' }}>
-                  <strong>({q.id}) {q.category}</strong>: {q.question.substring(0, 100)}...
-                </div>
-              ))}
-              {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).length === 0 && <p>すべての問題に正解しました！</p>}
+          <div style={{ padding: '4vh' }}>
+            <div className="score-summary-grid">
+              <div className="score-box">
+                <div className="score-label">Reading</div>
+                <div className="score-value">{rScore}<span className="score-total"> / {rTotal}</span></div>
+                <div className="score-percent">{Math.round((rScore / rTotal) * 100 || 0)}%</div>
+              </div>
+              <div className="score-box">
+                <div className="score-label">Listening</div>
+                <div className="score-value">{lScore}<span className="score-total"> / {lTotal}</span></div>
+                <div className="score-percent">{Math.round((lScore / lTotal) * 100 || 0)}%</div>
+              </div>
+              <div className="score-box highlight">
+                <div className="score-label">Writing</div>
+                <div className="score-value">{wScore}<span className="score-total"> / {wTotal}</span></div>
+                <div className="score-percent">{Math.round((wScore / wTotal) * 100 || 0)}%</div>
+              </div>
             </div>
 
-            <div style={{ marginTop: '5vh' }}>
-              <h2 style={{ borderBottom: '2px solid #1e3c72', paddingBottom: '1vh' }}>ライティング回答内容</h2>
-              {questions.filter(q => q.type === 'writing').map((q, idx) => (
-                <div key={`${q.type}_${q.id}_${idx}`} style={{ marginTop: '2vh', padding: '3vh', background: '#f8f9fa', borderRadius: '12px', whiteSpace: 'pre-wrap', fontFamily: 'serif', fontSize: '2.2vh', border: '1px solid #ddd' }}>
-                  {answers[`${q.type}_${q.id}`] || '(回答なし)'}
-                </div>
-              ))}
+            <div className="action-buttons-row" style={{ marginTop: '4vh', display: 'flex', gap: '2vh', justifyContent: 'center' }}>
+              <button className="btn-premium" onClick={() => setShowPrintView(true)}>
+                <span>🖨️</span> 練習プリントを出力
+              </button>
+              <button className="btn-premium secondary" onClick={() => window.location.reload()}>
+                <span>🔄</span> 新しい試験を開始
+              </button>
+            </div>
+
+            <div className="wrong-questions-section" style={{ marginTop: '6vh', textAlign: 'left' }}>
+              <h2 className="section-title">間違えた問題の復習</h2>
+              <div className="wrong-list">
+                {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).map((q, idx) => (
+                  <div key={idx} className="wrong-item">
+                    <span className="wrong-cat">[{q.type.toUpperCase()}]</span>
+                    <span className="wrong-id">({q.id})</span>
+                    <span className="wrong-text">{q.question.substring(0, 80)}...</span>
+                  </div>
+                ))}
+                {questions.filter(q => gradingMarks[`${q.type}_${q.id}`] === false).length === 0 && <p style={{ textAlign: 'center', padding: '4vh', color: '#666' }}>素晴らしい！全問正解です。</p>}
+              </div>
             </div>
           </div>
-
-          <button className="btn-nav" style={{ marginTop: '6vh', padding: '2vh 5vh' }} onClick={() => window.location.reload()}>新しい試験を開始</button>
         </div>
       </div>
     );
@@ -311,10 +434,10 @@ const App: React.FC = () => {
       <header className="s-cbt-header">
         <div className="grade-title-area">Grade Pre-1</div>
         <div className="exam-title">
-          筆記試験（リーディングテスト／ライティングテスト）
+          {state === 'listening_phase' ? 'リスニングテスト' : '筆記試験（リーディングテスト／ライティングテスト）'}
         </div>
         <div className="timer-area">
-          <span style={{ marginRight: '1vh', opacity: 0.8 }}>筆記試験 残り時間</span>
+          <span style={{ marginRight: '1vh', opacity: 0.8 }}>{state === 'listening_phase' ? 'リスニング' : '筆記'} 残り時間</span>
           <span>{formatTime(timeLeft)}</span>
         </div>
       </header>
@@ -337,23 +460,22 @@ const App: React.FC = () => {
           {currentQuestion ? (
             <>
               {currentQuestion.type === 'listening' ? (
-                <div className="listening-view" style={{ padding: '4vh', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <div className="listening-view">
                   <div style={{ backgroundColor: '#e0e0e0', padding: '2vh', borderRadius: '8px', marginBottom: '2vh', display: 'flex', alignItems: 'center' }}>
                     <div style={{ background: '#999', color: 'white', padding: '1vh 2vh', borderRadius: '20px', marginRight: '2vh', fontWeight: 'bold', fontSize: '1.8vh' }}>{currentQuestion.category}</div>
-                    <div style={{ fontSize: '2vh', fontWeight: 500 }}>{currentQuestion.question || "対話を聞き、その最後の文に対する応答として最も適切なものを、放送される選択肢の中から一つ選びなさい。"}</div>
+                    <div style={{ fontSize: '2vh', fontWeight: 500 }}>{currentQuestion.question || "対話を聞き、問いに対する最も適切なものを一つ選びなさい。"}</div>
                   </div>
-                  <div style={{ flex: 1, display: 'flex', marginTop: '2vh' }}>
-                    <div style={{ marginRight: '4vh', fontSize: '2.5vh', fontWeight: 'bold' }}>No.{currentQuestion.id}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh', flex: 1, maxWidth: '600px' }}>
+                  <div className="listening-main-content">
+                    <div className="q-num-big">No.{currentQuestion.id}</div>
+                    <div className="listening-options-box">
                       {currentQuestion.options.length > 0 ? currentQuestion.options.map((opt, i) => (
                         <button
                           key={i}
                           className={`listening-btn ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'active' : ''}`}
                           onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: i + 1 })}
-                          style={{ display: 'flex', alignItems: 'center', textAlign: 'left', padding: '2vh', gap: '2vh' }}
                         >
-                          <span style={{ background: answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? '#fff' : '#eee', color: answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? '#007bff' : '#333', borderRadius: '50%', width: '4vh', height: '4vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'none' : '1px solid #ccc' }}>{i + 1}</span>
-                          <span style={{ fontSize: '2vh' }}>{opt}</span>
+                          <span className="opt-num">{i + 1}</span>
+                          <span className="opt-text">{opt}</span>
                         </button>
                       )) : [1, 2, 3, 4].map(num => (
                         <button
@@ -379,8 +501,8 @@ const App: React.FC = () => {
               ) : currentQuestion.type === 'writing' ? (
                 <div className="writing-single-view">
                   <div className="writing-prompt-area" style={{ backgroundColor: '#f9f9f9', padding: '3vh', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '2vh' }}>
-                    <div style={{ fontSize: '1.8vh', lineHeight: '1.6' }}>
-                      {currentPassageLines(currentQuestion.passage || "").map((line, i) => <div key={i}>{line}</div>)}
+                    <div style={{ fontSize: '2vh', lineHeight: '1.6', fontWeight: 500 }}>
+                      {currentPassageLines(currentQuestion.passage || "").map((line, i) => <div key={i} style={{ marginBottom: '1vh' }}>{line}</div>)}
                     </div>
                   </div>
                   <div className="writing-input-area" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -389,9 +511,10 @@ const App: React.FC = () => {
                     </div>
                     <textarea
                       className="writing-textarea"
-                      style={{ flex: 1, minHeight: '30vh', resize: 'vertical' }}
+                      style={{ flex: 1, minHeight: '35vh', resize: 'vertical' }}
                       value={answers[`${currentQuestion.type}_${currentQuestion.id}`] as string || ''}
                       onChange={(e) => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: e.target.value })}
+                      placeholder="Type your essay here..."
                     />
                     <div className="tool-header" style={{ justifyContent: 'flex-end', marginTop: '1vh', border: 'none', background: 'transparent' }}>
                       <button className="tool-btn">コピー</button>
@@ -412,16 +535,16 @@ const App: React.FC = () => {
               ) : currentQuestion.passage ? (
                 <div className="split-view">
                   <div className="passage-pane">
-                    <div className="passage-content" style={{ fontSize: '2.2vh', lineHeight: '1.6' }}>
+                    <div className="passage-content">
                       {currentPassageLines(currentQuestion.passage).map((line, i) => (
-                        <div key={i} style={{ marginBottom: '1vh', textAlign: line.match(/^[A-Z\s]+$/) ? 'center' : 'left', fontWeight: line.match(/^[A-Z\s]+$/) ? 700 : 400 }}>
+                        <div key={i} style={{ marginBottom: '1.5vh', textAlign: line.match(/^[A-Z\s,.]+$/) ? 'center' : 'left', fontWeight: line.match(/^[A-Z\s,.]+$/) ? 700 : 400 }}>
                           {line}
                         </div>
                       ))}
                     </div>
                   </div>
                   <div className="question-pane">
-                    <div className="question-text" style={{ marginBottom: '2vh', fontSize: '2vh' }}>
+                    <div className="question-text" style={{ marginBottom: '3vh', fontSize: '2.2vh', fontWeight: 600 }}>
                       ({currentQuestion.id}) {currentQuestion.question}
                     </div>
                     <div className="options-area">
@@ -430,7 +553,7 @@ const App: React.FC = () => {
                           <div className={`option-box ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'selected' : ''}`}>
                             {i + 1}
                           </div>
-                          <span style={{ fontSize: '1.8vh' }}>{opt}</span>
+                          <span className="opt-text-reading">{opt}</span>
                         </div>
                       ))}
                     </div>
@@ -447,16 +570,16 @@ const App: React.FC = () => {
                 </div>
               ) : (
                 <div className="single-pane-view">
-                  <div className="question-text" style={{ fontSize: '2vh', marginBottom: '4vh' }}>
+                  <div className="question-text" style={{ fontSize: '2.5vh', marginBottom: '5vh', fontWeight: 600 }}>
                     ({currentQuestion.id}) {currentQuestion.question}
                   </div>
-                  <div className="options-area" style={{ maxWidth: '600px', marginLeft: '2vh' }}>
+                  <div className="options-area" style={{ maxWidth: '700px' }}>
                     {currentQuestion.options.map((opt, i) => (
                       <div key={i} className="option-row" onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: i + 1 })}>
                         <div className={`option-box ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'selected' : ''}`}>
                           {i + 1}
                         </div>
-                        <span style={{ fontSize: '1.8vh' }}>{opt}</span>
+                        <span className="opt-text-reading">{opt}</span>
                       </div>
                     ))}
                   </div>
@@ -491,7 +614,7 @@ const App: React.FC = () => {
               <div className="overlay-nav">
                 <button
                   className="s-cbt-btn"
-                  style={{ background: '#28a745', color: '#fff', border: 'none' }}
+                  style={{ background: '#28a745', color: '#fff', border: 'none', fontWeight: 800 }}
                   onClick={handleNextPhase}
                 >
                   {state === 'listening_phase' ? 'リスニング試験を終了して次へ ▶' : '試験を終了する ▶'}
@@ -501,7 +624,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Sidebar Toggle Button (Only visible if sidebar is closed, or placed fixed) */}
+        {/* Sidebar Toggle Button */}
         {!sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
