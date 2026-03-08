@@ -295,7 +295,7 @@ const App: React.FC = () => {
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#fff' }}>
       <header className="s-cbt-header">
-        <div className="grade-title-area">Grade Pre-2</div>
+        <div className="grade-title-area">Grade Pre-1</div>
         <div className="exam-title">
           筆記試験（リーディングテスト／ライティングテスト）
         </div>
