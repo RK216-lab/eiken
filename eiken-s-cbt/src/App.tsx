@@ -95,6 +95,18 @@ const parseEikenText = (text: string): Question[] => {
         options: options,
         situation: situation || undefined
       });
+
+      // Update currentPassage if the next question's content or trailing part of this one has a new passage
+      if (qContent.match(/Passage:|Article:|TOPIC:/i)) {
+        const parts = qContent.split(/Passage:|Article:|TOPIC:/i);
+        if (parts.length > 1) {
+          const newPassage = qContent.substring(qContent.search(/Passage:|Article:|TOPIC:/i)).trim();
+          // Only update if it's substantial (to avoid catching mid-sentence mentions)
+          if (newPassage.length > 50) {
+            currentPassage = newPassage.split(/Q\(\d+\)|No\.\s*\d+|Q\d+/)[0];
+          }
+        }
+      }
     }
   }
   return questions;
@@ -117,6 +129,7 @@ const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState(90 * 60);
   const [showConfirm, setShowConfirm] = useState(false);
   const [reviewLater, setReviewLater] = useState<Record<string, boolean>>({});
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Phase-specific question lists
   const listeningQs = useMemo(() => questions.filter(q => q.type === 'listening'), [questions]);
@@ -171,7 +184,7 @@ const App: React.FC = () => {
       <div className="start-screen">
         <div className="glass-card">
           <h1 style={{ textAlign: 'center', marginBottom: '1vh', fontSize: '4vh' }}>英検 S-CBT 準1級 模擬試験</h1>
-          <p style={{ textAlign: 'center', fontSize: '1.8vh', color: '#666', marginBottom: '3vh' }}>
+          <p style={{ textAlign: 'center', fontSize: '2.2vh', color: '#666', marginBottom: '3vh' }}>
             下部のテキストエリアに問題データを貼り付けてください。
           </p>
           <textarea
@@ -179,6 +192,7 @@ const App: React.FC = () => {
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
             placeholder="[Reading Part1] ..."
+            style={{ fontSize: '2vh' }}
           />
           <button className="btn-finish" style={{ marginTop: '3vh' }} onClick={handleStart}>試験を開始する</button>
         </div>
@@ -330,16 +344,18 @@ const App: React.FC = () => {
                   </div>
                   <div style={{ flex: 1, display: 'flex', marginTop: '2vh' }}>
                     <div style={{ marginRight: '4vh', fontSize: '2.5vh', fontWeight: 'bold' }}>No.{currentQuestion.id}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh', flex: 1, maxWidth: '400px' }}>
-                      {currentQuestion.options.length > 0 ? currentQuestion.options.map((_, i) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2vh', flex: 1, maxWidth: '600px' }}>
+                      {currentQuestion.options.length > 0 ? currentQuestion.options.map((opt, i) => (
                         <button
                           key={i}
                           className={`listening-btn ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'active' : ''}`}
                           onClick={() => setAnswers({ ...answers, [`${currentQuestion.type}_${currentQuestion.id}`]: i + 1 })}
+                          style={{ display: 'flex', alignItems: 'center', textAlign: 'left', padding: '2vh', gap: '2vh' }}
                         >
-                          {i + 1}
+                          <span style={{ background: answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? '#fff' : '#eee', color: answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? '#007bff' : '#333', borderRadius: '50%', width: '4vh', height: '4vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: answers[`${currentQuestion.type}_${currentQuestion.id}`] === i + 1 ? 'none' : '1px solid #ccc' }}>{i + 1}</span>
+                          <span style={{ fontSize: '2vh' }}>{opt}</span>
                         </button>
-                      )) : [1, 2, 3].map(num => (
+                      )) : [1, 2, 3, 4].map(num => (
                         <button
                           key={num}
                           className={`listening-btn ${answers[`${currentQuestion.type}_${currentQuestion.id}`] === num ? 'active' : ''}`}
@@ -461,80 +477,111 @@ const App: React.FC = () => {
           )}
 
           {/* Bottom Navigation */}
-          <div className="nav-pos-bottom">
-            <div className="overlay-nav">
-              <button
-                className="s-cbt-btn"
-                disabled={currentIdx === activeQs.length - 1}
-                onClick={() => setCurrentIdx(currentIdx + 1)}
-              >
-                次の問題へ ▼
-              </button>
-            </div>
+          <div className="nav-pos-bottom" style={{ display: 'flex', gap: '2vh' }}>
+            {currentIdx < activeQs.length - 1 ? (
+              <div className="overlay-nav">
+                <button
+                  className="s-cbt-btn"
+                  onClick={() => setCurrentIdx(currentIdx + 1)}
+                >
+                  次の問題へ ▼
+                </button>
+              </div>
+            ) : (
+              <div className="overlay-nav">
+                <button
+                  className="s-cbt-btn"
+                  style={{ background: '#28a745', color: '#fff', border: 'none' }}
+                  onClick={handleNextPhase}
+                >
+                  {state === 'listening_phase' ? 'リスニング試験を終了して次へ ▶' : '試験を終了する ▶'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        <aside className="sidebar">
-          <div className="sidebar-header">あなたの解答</div>
-          <div className="question-status-list">
-            {Object.entries(activeQs.reduce((acc, q) => {
-              if (!acc[q.category]) acc[q.category] = [];
-              acc[q.category].push(q);
-              return acc;
-            }, {} as Record<string, Question[]>)).map(([category, groupQs], groupIdx) => {
-              const firstQ = groupQs[0];
-              const lastQ = groupQs[groupQs.length - 1];
-              return (
-                <div key={category} className="range-group">
-                  <div className="range-header">
-                    <div style={{ background: '#777', color: 'white', borderRadius: '50%', width: '2.5vh', height: '2.5vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2vh' }}>
-                      {groupIdx + 1}
+        {/* Sidebar Toggle Button (Only visible if sidebar is closed, or placed fixed) */}
+        {!sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            style={{ position: 'absolute', right: '2vh', top: '15vh', zIndex: 100, background: '#1e3c72', color: 'white', border: 'none', padding: '1vh 2vh', borderRadius: '4px', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
+          >
+            ◀ 解答欄を開く
+          </button>
+        )}
+
+        {sidebarOpen && (
+          <aside className="sidebar">
+            <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>あなたの解答</span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                style={{ background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.5)', borderRadius: '4px', cursor: 'pointer', padding: '0.5vh 1vh', fontSize: '1.2vh' }}
+              >
+                閉じる ▶
+              </button>
+            </div>
+            <div className="question-status-list">
+              {Object.entries(activeQs.reduce((acc, q) => {
+                if (!acc[q.category]) acc[q.category] = [];
+                acc[q.category].push(q);
+                return acc;
+              }, {} as Record<string, Question[]>)).map(([category, groupQs], groupIdx) => {
+                const firstQ = groupQs[0];
+                const lastQ = groupQs[groupQs.length - 1];
+                return (
+                  <div key={category} className="range-group">
+                    <div className="range-header">
+                      <div style={{ background: '#777', color: 'white', borderRadius: '50%', width: '2.5vh', height: '2.5vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2vh' }}>
+                        {groupIdx + 1}
+                      </div>
+                      <span>({firstQ.id})</span>
+                      {groupQs.length > 1 && (
+                        <>
+                          <span>-</span>
+                          <span>({lastQ.id})</span>
+                        </>
+                      )}
                     </div>
-                    <span>({firstQ.id})</span>
-                    {groupQs.length > 1 && (
-                      <>
-                        <span>-</span>
-                        <span>({lastQ.id})</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="range-content">
-                    {groupQs.map((q) => (
-                      <div key={q.id} className="q-sidebar-row">
-                        <span className="q-num-label" onClick={() => setCurrentIdx(activeQs.indexOf(q))}>
-                          ({q.id})
-                        </span>
-                        <div className="sidebar-bubbles">
-                          {q.type === 'writing' ? (
-                            <div className={`bubble writing-bubble ${answers[`${q.type}_${q.id}`] ? 'active' : ''}`}>
-                              {answers[`${q.type}_${q.id}`] ? '解答済' : <span style={{ color: '#888' }}>未解答</span>}
-                            </div>
-                          ) : (
-                            Array.from({ length: q.type === 'listening' ? 3 : 4 }, (_, i) => i + 1).map(num => (
-                              <div
-                                key={num}
-                                className={`bubble ${answers[`${q.type}_${q.id}`] === num ? 'active' : ''}`}
-                                onClick={() => setAnswers({ ...answers, [`${q.type}_${q.id}`]: num })}
-                              >
-                                {num}
+                    <div className="range-content">
+                      {groupQs.map((q) => (
+                        <div key={q.id} className="q-sidebar-row">
+                          <span className="q-num-label" onClick={() => setCurrentIdx(activeQs.indexOf(q))}>
+                            ({q.id})
+                          </span>
+                          <div className="sidebar-bubbles">
+                            {q.type === 'writing' ? (
+                              <div className={`bubble writing-bubble ${answers[`${q.type}_${q.id}`] ? 'active' : ''}`}>
+                                {answers[`${q.type}_${q.id}`] ? '解答済' : <span style={{ color: '#888' }}>未解答</span>}
                               </div>
-                            ))
+                            ) : (
+                              Array.from({ length: 4 }, (_, i) => i + 1).map(num => (
+                                <div
+                                  key={num}
+                                  className={`bubble ${answers[`${q.type}_${q.id}`] === num ? 'active' : ''}`}
+                                  onClick={() => setAnswers({ ...answers, [`${q.type}_${q.id}`]: num })}
+                                >
+                                  {num}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                          {reviewLater[`${q.type}_${q.id}`] && (
+                            <span style={{ background: '#ffff00', color: '#000', fontSize: '1vh', padding: '0.2vh 0.5vh', borderRadius: '2px', fontWeight: 700, marginLeft: '0.5vh', border: '1px solid #000' }}>あとで</span>
                           )}
                         </div>
-                        {reviewLater[`${q.type}_${q.id}`] && (
-                          <span style={{ background: '#ffff00', color: '#000', fontSize: '1vh', padding: '0.2vh 0.5vh', borderRadius: '2px', fontWeight: 700, marginLeft: '0.5vh', border: '1px solid #000' }}>あとで</span>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-          <button className="btn-finish-sidebar" onClick={handleNextPhase}>
-            {state === 'listening_phase' ? 'リスニング試験を終了して次へ' : '筆記試験を終了して試験終了'}
-          </button>
-        </aside>
+                );
+              })}
+            </div>
+            <button className="btn-finish-sidebar" onClick={handleNextPhase}>
+              {state === 'listening_phase' ? 'リスニング試験を終了して次へ' : '筆記試験を終了して試験終了'}
+            </button>
+          </aside>
+        )}
       </main>
 
 
