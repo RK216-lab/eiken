@@ -132,7 +132,7 @@ const App: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
-  const [gradingMarks, setGradingMarks] = useState<Record<string, boolean | number>>({});
+  const [gradingMarks, setGradingMarks] = useState<Record<string, boolean | number | Record<string, number>>>({});
   const [timeLeft, setTimeLeft] = useState(90 * 60);
   const [showConfirm, setShowConfirm] = useState(false);
   const [reviewLater, setReviewLater] = useState<Record<string, boolean>>({});
@@ -192,7 +192,7 @@ const App: React.FC = () => {
     const sectionQs = questions.filter(q => q.type === type);
     if (type === 'writing') {
       return sectionQs.reduce((sum, q) => {
-        const marks = gradingMarks[`${type}_${q.id}`] as Record<string, number>;
+        const marks = (gradingMarks[`${type}_${q.id}`] as unknown) as Record<string, number>;
         if (!marks) return sum;
         return sum + (marks.content || 0) + (marks.structure || 0) + (marks.vocab || 0) + (marks.grammar || 0);
       }, 0);
@@ -337,7 +337,7 @@ const App: React.FC = () => {
                           { key: 'vocab', label: '語彙' },
                           { key: 'grammar', label: '文法' }
                         ].map(criteria => {
-                          const currentVal = (gradingMarks[`${q.type}_${q.id}`] as Record<string, number>)?.[criteria.key] || 0;
+                          const currentVal = ((gradingMarks[`${q.type}_${q.id}`] as unknown) as Record<string, number>)?.[criteria.key] || 0;
                           return (
                             <div key={criteria.key} className="criteria-row" style={{ display: 'flex', alignItems: 'center', gap: '1.5vh', marginBottom: '1vh' }}>
                               <div style={{ width: '6vh', fontWeight: 700 }}>{criteria.label}</div>
@@ -347,7 +347,7 @@ const App: React.FC = () => {
                                     key={pt}
                                     className={`tool-btn ${currentVal === pt ? 'active-model' : ''}`}
                                     onClick={() => {
-                                      const currentMarks = (gradingMarks[`${q.type}_${q.id}`] as Record<string, number>) || {};
+                                      const currentMarks = ((gradingMarks[`${q.type}_${q.id}`] as unknown) as Record<string, number>) || {};
                                       handleManualGrade(q.id, q.type, { ...currentMarks, [criteria.key]: pt });
                                     }}
                                     style={{ flex: 1, padding: '1vh', fontSize: '1.8vh' }}
@@ -360,7 +360,7 @@ const App: React.FC = () => {
                           );
                         })}
                         <div style={{ marginTop: '1vh', textAlign: 'right', fontWeight: 800, fontSize: '2.2vh', color: '#1e3c72' }}>
-                          合計: {Object.values((gradingMarks[`${q.type}_${q.id}`] as Record<string, number>) || {}).reduce((a, b) => a + b, 0)} / 16
+                          合計: {Object.values(((gradingMarks[`${q.type}_${q.id}`] as unknown) as Record<string, number>) || {}).reduce((a, b) => a + b, 0)} / 16
                         </div>
                       </div>
                     ) : (
@@ -478,7 +478,7 @@ const App: React.FC = () => {
                 <div className="detail-title">ライティング観点別判定</div>
                 <div className="criteria-grid-cert">
                   {questions.filter(q => q.type === 'writing').map((q, idx) => {
-                    const marks = (gradingMarks[`${q.type}_${q.id}`] as Record<string, number>) || {};
+                    const marks = ((gradingMarks[`${q.type}_${q.id}`] as unknown) as Record<string, number>) || {};
                     return (
                       <div key={idx} className="cert-writing-q-box">
                         <div className="q-label">Question {q.id} ({q.category})</div>
